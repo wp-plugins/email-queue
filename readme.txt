@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-This plugin allows you to manage email massages sent by BestWebSoft plugins. 
+This plugin allows you to manage email messages sent by BestWebSoft plugins. 
 
 == Description ==
 
@@ -30,7 +30,7 @@ You have an option to remove any of mail-capable plugin from this plugin's queue
 * Actions: You can trash you messages, restore them then or delete completely.
 * Actions: You can look up the receivers list of your mails.
 
-= Translate =
+= Translation =
 
 * Russian (ru_RU)
 * Ukrainian (uk)
