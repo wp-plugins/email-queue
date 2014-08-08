@@ -3,8 +3,8 @@ Contributors: bestwebsoft
 Donate link: https://www.2checkout.com/checkout/purchase?sid=1430388&quantity=1&product_id=94
 Tags: email, e-mail, mail, mailout, mail queue, mail query, manage mail, priority, priorities, send mail through smtp server, trash, trush, quiry, mayl, maile, qwiry, email queue plugin, queu, qeueu, emeil, imail, assign priorities, priority level, manage messages, trash messages, delete messages, outgoing messages, organize mail queue, remove plugin from queue, send mail through wp-mail server, send mail through php mail server
 Requires at least: 3.1
-Tested up to: 3.9.1
-Stable tag: 1.0.0
+Tested up to: 4.0-beta3
+Stable tag: 1.0.1
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -115,6 +115,9 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 
 == Changelog ==
 
+= V1.0.1 - 08.08.2014 =
+* Budfix : Security Exploit was fixed.
+
 = V1.0.0 - 20.06.2014 =
 * NEW : Russian language files were added to the plugin.
 * Update : Database tables were renamed. 
@@ -122,5 +125,8 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 
 == Upgrade Notice ==
 
-= 1.0.0 =
+= V1.0.1 =
+Security Exploit was fixed.
+
+= V1.0.0 =
 Russian language files were added to the plugin. Database tables were renamed. The tructure of settings page was changed.
