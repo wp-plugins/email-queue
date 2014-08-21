@@ -3,7 +3,7 @@ Plugin Name: Email Queue
 Plugin URI: http://bestwebsoft.com/plugin/
 Description: This plugin allows you to manage email massages sent by BestWebSoft plugins.
 Author: BestWebSoft
-Version: 1.0.1
+Version: 1.0.2
 Author URI: http://bestwebsoft.com/
 License: GPLv3 or later
 */
@@ -1876,9 +1876,9 @@ if ( ! class_exists( 'MLQ_Plugin_List' ) ) {
 			global $plugin_status;
 			$actions = array();
 			if ( in_array( $plugin_status, array( 'all', 'install', 'not_isntall', 'active', 'inactive' ) ) ) {
-				$actions['remove_plugin_from_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=remove_plugin_from_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_out_' . $item['id'], 'mlq_nonce' ) . '">' . __( 'Remove from queue', 'email-queue' ) . '</a>';
+				$actions['remove_plugin_from_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=remove_plugin_from_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_out_' . $item['id'] ) . '">' . __( 'Remove from queue', 'email-queue' ) . '</a>';
 			} else {
-				$actions['restore_plugin_to_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=restore_plugin_to_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_in_' . $item['id'], 'mlq_nonce' ) . '">' . __( 'Restore to queue', 'email-queue' ) . '</a>';
+				$actions['restore_plugin_to_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=restore_plugin_to_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_in_' . $item['id'] ) . '">' . __( 'Restore to queue', 'email-queue' ) . '</a>';
 			}
 			return sprintf( '%1$s %2$s', $item['title'], $this->row_actions( $actions ) );
 		}
@@ -2345,7 +2345,7 @@ if ( ! function_exists( 'mlq_plugin_list_actions' ) ) {
 				}
 				switch ( $action ) {
 					case 'remove_plugin_from_queue':
-						if ( check_admin_referer( 'plugin_out_' . $_GET['plugin_id'], 'mlq_nonce' ) ) {
+						if ( check_admin_referer( 'plugin_out_' . $_GET['plugin_id'] ) ) {
 							if ( empty( $_GET['plugin_id'] ) ) {
 								$action_message['error'] = $message_list['empty_plugins_list'];
 							} else {
@@ -2402,7 +2402,7 @@ if ( ! function_exists( 'mlq_plugin_list_actions' ) ) {
 						}
 						break;
 					case 'restore_plugin_to_queue':
-						if ( check_admin_referer( 'plugin_in_' . $_GET['plugin_id'], 'mlq_nonce' ) ) {
+						if ( check_admin_referer( 'plugin_in_' . $_GET['plugin_id'] ) ) {
 							$plugin = $_GET['plugin_id'];
 							if ( empty( $plugin ) ) {
 								$action_message['error'] = $message_list['empty_plugins_list'];
@@ -2885,12 +2885,12 @@ if ( ! class_exists( 'MLQ_Mail_Queue_List' ) ) {
 			$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '&mail_status=all';
 			$actions = array();
 			if ( in_array( $mail_status, array( '&mail_status=all', '&mail_status=in_progress', '&mail_status=done', ) ) ) {
-				$actions['show_report']  = '<a class="mlq-show-users-list" href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=show_report&report_id=' . $item['id'] . '&list_paged=0&list_per_page=30' . $mail_status, 'show_mail_' . $item['id'], 'mlq_nonce' ) . '">' . __( 'Mail details', 'email-queue' ) . '</a>';
-				$actions['trash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=trash_report&report_id=' . $item['id'] . $mail_status, 'trash_mail_' . $item['id'], 'mlq_nonce' ) . '">' . __( 'Move to trash', 'email-queue' ) . '</a>';
+				$actions['show_report']  = '<a class="mlq-show-users-list" href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=show_report&report_id=' . $item['id'] . '&list_paged=0&list_per_page=30' . $mail_status, 'show_mail_' . $item['id'] ) . '">' . __( 'Mail details', 'email-queue' ) . '</a>';
+				$actions['trash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=trash_report&report_id=' . $item['id'] . $mail_status, 'trash_mail_' . $item['id'] ) . '">' . __( 'Move to trash', 'email-queue' ) . '</a>';
 			}
 			if ( $mail_status == '&mail_status=trash' ) {
-				$actions['untrash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=untrash_report&report_id=' . $item['id'] . $mail_status, 'untrash_mail_' . $item['id'], 'mlq_nonce' ) . '">' . __( 'Restore', 'email-queue' ) . '</a>';
-				$actions['delete_report']  = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=delete_report&report_id=' . $item['id'] . $mail_status, 'delete_mail_' . $item['id'], 'mlq_nonce' ) . '">' . __( 'Delete permanently', 'email-queue' ) . '</a>';
+				$actions['untrash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=untrash_report&report_id=' . $item['id'] . $mail_status, 'untrash_mail_' . $item['id'] ) . '">' . __( 'Restore', 'email-queue' ) . '</a>';
+				$actions['delete_report']  = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=delete_report&report_id=' . $item['id'] . $mail_status, 'delete_mail_' . $item['id'] ) . '">' . __( 'Delete permanently', 'email-queue' ) . '</a>';
 			}
 			return sprintf( '%1$s %2$s', $item['title'], $this->row_actions( $actions ) );
 		}
@@ -3089,7 +3089,7 @@ if ( ! class_exists( 'MLQ_Mail_Queue_List' ) ) {
 		 */
 		public function show_report( $mail_id ) {
 			$list_table = null;
-			if ( isset( $_REQUEST['action'] ) && 'show_report' == $_REQUEST['action'] && $mail_id == $_REQUEST['report_id'] && check_admin_referer( 'show_mail_' . $_REQUEST['report_id'], 'mlq_nonce' ) ) {
+			if ( isset( $_REQUEST['action'] ) && 'show_report' == $_REQUEST['action'] && $mail_id == $_REQUEST['report_id'] && check_admin_referer( 'show_mail_' . $_REQUEST['report_id'] ) ) {
 				global $wpdb;
 				$pagination = '';
 				$mail     = $_REQUEST['report_id'];
@@ -3376,7 +3376,7 @@ if ( ! function_exists( 'mlq_mail_actions' ) ) {
 				}
 				switch ( $action ) {
 					case 'trash_report':
-						if ( check_admin_referer( 'trash_mail_' . $_GET['report_id'], 'mlq_nonce' ) ) {
+						if ( check_admin_referer( 'trash_mail_' . $_GET['report_id'] ) ) {
 							if ( empty( $_GET['report_id'] ) ) {
 								$action_message['error'] = $message_list['empty_mails_list'];
 							} else {
@@ -3420,7 +3420,7 @@ if ( ! function_exists( 'mlq_mail_actions' ) ) {
 						}
 						break;
 					case 'untrash_report':
-						if ( check_admin_referer( 'untrash_mail_' . $_GET['report_id'], 'mlq_nonce' ) ) {
+						if ( check_admin_referer( 'untrash_mail_' . $_GET['report_id'] ) ) {
 							if ( empty( $_GET['report_id'] ) ) {
 								$action_message['error'] = $message_list['empty_mails_list'];
 							} else {
@@ -3468,7 +3468,7 @@ if ( ! function_exists( 'mlq_mail_actions' ) ) {
 						}
 						break;
 					case 'delete_report':
-						if ( check_admin_referer( 'delete_mail_' . $_GET['report_id'], 'mlq_nonce' ) ) {
+						if ( check_admin_referer( 'delete_mail_' . $_GET['report_id'] ) ) {
 							if ( empty( $_GET['report_id'] ) ) {
 								$action_message['error'] = $message_list['empty_mails_list'];
 							} else {
