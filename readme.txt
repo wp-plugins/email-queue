@@ -17,6 +17,8 @@ You can assign priorities to plugins that send mail. There are three levels of p
 You can manage outgoing messages: trash them or delete completely. You can use searching, filtering and bulk operations with your mail.
 You have an option to remove any of mail-capable plugin from this plugin's queue.
 
+http://www.youtube.com/watch?v=iFX0fF9B65A
+
 <a href="http://wordpress.org/plugins/email-queue/faq/" target="_blank">FAQ</a>
 
 <a href="http://support.bestwebsoft.com" target="_blank">Support</a>
