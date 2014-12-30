@@ -1,0 +1,192 @@
+/**
+ * Email-Queue Settings page
+ */
+#mlq-mail h3 { 
+	padding-top: 17px; 
+}
+#mlq-settings-form {
+	margin-top: 7px;
+}
+#mlq-settings-table tr td {
+	padding-left: 8px;
+}
+.mlq_info {
+	font-size: 10px;
+	color: #777;
+}
+#mlq-calculate,
+#mlq-total-messages {
+	color: green;
+	font-weight: bold;
+}
+/**
+ * Mail queue, plugin list
+ */
+.mlq-inprogress-row th,
+.mlq-inprogress-row td {
+	background: #fefaf3;
+}
+.mlq-inprogress-row .check-column {
+	border-left: 4px solid #d54e21;
+}
+/* table columns */
+.mlq-report-list-page .column-status,
+.mlq-report-list-page .column-plugin,
+.mlq-report-list-page .column-priority {
+	width: 100px;
+	text-align: center;
+}
+.mlq-report-list-page .column-install_status,
+.mlq-report-list-page .column-active_status {
+	width: 170px;
+}
+.mlq-report-list-page .column-priority_general {
+	width: 350px;
+}
+.mlq-done-status {
+	color: #006505;
+}
+.mlq-unknown-status {
+	color: red;
+}
+.mlq-report-list-page .column-title {
+	position: relative;
+}
+.mlq-report-list-page .column-title .row-actions .show_report a,
+.mlq-report-list-page .column-title .row-actions .untrash_report a,
+.mlq-report-list-page .column-title .row-actions .close_report a,
+.mlq-report-list-page .column-title .row-actions .change_priority a,
+.mlq-report-list-page .column-title .row-actions .restore_plugin_to_queue a  {
+	color: #006505;
+}
+.mlq-report-list-page .column-title .row-actions .show_report a:hover,
+.mlq-report-list-page .column-title .row-actions .untrash_report a:hover,
+.mlq-report-list-page .column-title .row-actions .close_report a:hover,
+.mlq-report-list-page .column-title .row-actions .change_priority a:hover,
+.mlq-report-list-page .column-title .row-actions .restore_plugin_to_queue a:hover  {
+	color: green;
+}
+.mlq-report-list-page .column-title .row-actions .trash_report a,
+.mlq-report-list-page .column-title .row-actions .delete_report a,
+.mlq-report-list-page .column-title .row-actions .trash_plugin a,
+.mlq-report-list-page .column-title .row-actions .remove_plugin_from_queue a {
+	color: #a00;
+}
+.mlq-report-list-page .column-title .row-actions .trash_report a:hover,
+.mlq-report-list-page .column-title .row-actions .delete_report a:hover,
+.mlq-report-list-page .column-title .row-actions .trash_plugin a:hover,
+.mlq-report-list-page .column-title .row-actions .remove_plugin_from_queue a:hover {
+	color: red;
+}
+.mlq-inprogress-row .check-column input[type="checkbox"] {
+	margin-left: 4px !important;
+}
+.mlq-linking-word {
+	color: #777;
+}
+a.mlq-link-for-updates {
+	text-decoration: none;
+}
+/* Mail receivers list */
+.mlq-receivers-list {
+	width: 94%;
+	margin: 0 3%;
+}
+.mlq_th,
+.mlq-receivers-list thead th,
+.mlq-receivers-list tfoot tr td,
+.mlq-receivers-list tbody tr:first-child td {
+	border-top: 1px solid #e5e5e5;
+}
+/* pagination */
+.mlq-pagination {
+	float: right;
+}
+.mlq-pagination div {
+	float: left;
+}
+.mlq-pagination a,
+.mlq-pagination span {
+	font-size: 24px;
+	line-height: 24px;
+	padding: 0 5px;
+	vertical-align: top;
+}
+.mlq-total-pages {
+	display: inline-block;
+	padding-top: 3px !important;
+	font-size: 13px !important;
+}
+.mlq-total-users {
+	text-align: center;
+}
+@media only screen and ( max-width: 1280px ) {
+	.mlq-report-list-page .column-priority_general {
+		width: 180px;
+	}
+
+	.mlq-report-list-page .column-active_status,
+	.mlq-report-list-page .column-install_status {
+		width: 150px;
+	}
+}
+@media only screen and ( max-width: 782px ) {
+	input[type="radio"] {
+		margin-bottom: 10px;
+	}
+
+	.mlq-count {
+		vertical-align: top;
+	}
+
+	.mlq-report-list-page .column-install_status {
+		display: none;
+	}
+}
+@media only screen and ( max-width: 600px ) {
+	.mlq-report-list-page .column-title {
+		overflow: visible !important;
+	}
+
+	.mlq-report-list-page .column-status {
+		display: none;
+	}
+
+	.mlq-pagination {
+		float: left;
+	}
+
+	.mlq-receivers-list {
+		display: block;
+		position: relative;
+		left: -60px;
+	}
+
+	.mlq-report-list-page .column-active_status {
+		display: none;
+	}
+	
+}
+@media only screen and ( max-width: 450px ) {
+	.mlq-pagination div {
+		float: none;
+	}
+
+	.mlq-report-list-page .column-priority {
+		display: none;
+	}
+
+	.mlq-pagination .mlq-list-per-page {
+		margin: 0 0 10px 42px;
+	}
+
+	.mlq-username {
+		max-width: 120px;
+		word-wrap: break-word;
+	}
+}
+@media only screen and ( max-width: 320px ) {
+	.mlq-report-list-page .column-plugin {
+		display: none;
+	}
+}
