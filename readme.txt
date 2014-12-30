@@ -3,8 +3,8 @@ Contributors: bestwebsoft
 Donate link: https://www.2checkout.com/checkout/purchase?sid=1430388&quantity=1&product_id=94
 Tags: email, e-mail, mail, mailout, mail queue, mail query, manage mail, priority, priorities, send mail through smtp server, trash, trush, quiry, mayl, maile, qwiry, email queue plugin, queu, qeueu, emeil, imail, assign priorities, priority level, manage messages, trash messages, delete messages, outgoing messages, organize mail queue, remove plugin from queue, send mail through wp-mail server, send mail through php mail server
 Requires at least: 3.1
-Tested up to: 4.0
-Stable tag: 1.0.2
+Tested up to: 4.1
+Stable tag: 1.0.3
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -117,6 +117,10 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 
 == Changelog ==
 
+= V1.0.3 - 30.12.2014 =
+* Update : BWS plugins section is updated.
+* Update : We updated all functionality for wordpress 4.1.
+
 = V1.0.2 - 21.08.2014 =
 * Bugfix : Bug with errors on mailout list and plugin list pages on WP versions prior to 3.6 was fixed.
 
@@ -129,6 +133,9 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 * Update : The tructure of settings page was changed.
 
 == Upgrade Notice ==
+
+= V1.0.3 =
+BWS plugins section is updated. We updated all functionality for wordpress 4.1.
 
 = V1.0.2 =
 Bug with errors on mailout list and plugin list pages on WP versions prior to 3.6 was fixed.

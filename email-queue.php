@@ -1,9 +1,9 @@
 <?php /*
 Plugin Name: Email Queue
-Plugin URI: http://bestwebsoft.com/plugin/
+Plugin URI: http://bestwebsoft.com/products/
 Description: This plugin allows you to manage email massages sent by BestWebSoft plugins.
 Author: BestWebSoft
-Version: 1.0.2
+Version: 1.0.3
 Author URI: http://bestwebsoft.com/
 License: GPLv3 or later
 */
@@ -30,13 +30,13 @@ License: GPLv3 or later
 */
 if ( ! function_exists( 'mlq_admin_default_setup' ) ) {
 	function mlq_admin_default_setup() {
-		global $wp_version, $bstwbsftwppdtplgns_options, $wpmu, $bstwbsftwppdtplgns_added_menu;
+		global $wp_version, $bstwbsftwppdtplgns_options, $bstwbsftwppdtplgns_added_menu;
 		$bws_menu_info = get_plugin_data( plugin_dir_path( __FILE__ ) . "bws_menu/bws_menu.php" );
 		$bws_menu_version = $bws_menu_info["Version"];
 		$base = plugin_basename( __FILE__ );
 
 		if ( ! isset( $bstwbsftwppdtplgns_options ) ) {
-			if ( 1 == $wpmu ) {
+			if ( is_multisite() ) {
 				if ( ! get_site_option( 'bstwbsftwppdtplgns_options' ) )
 					add_site_option( 'bstwbsftwppdtplgns_options', array(), '', 'yes' );
 				$bstwbsftwppdtplgns_options = get_site_option( 'bstwbsftwppdtplgns_options' );
@@ -50,11 +50,17 @@ if ( ! function_exists( 'mlq_admin_default_setup' ) ) {
 		if ( isset( $bstwbsftwppdtplgns_options['bws_menu_version'] ) ) {
 			$bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] = $bws_menu_version;
 			unset( $bstwbsftwppdtplgns_options['bws_menu_version'] );
-			update_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
+			if ( is_multisite() )
+				update_site_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
+			else
+				update_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
 			require_once( dirname( __FILE__ ) . '/bws_menu/bws_menu.php' );
 		} else if ( ! isset( $bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] ) || $bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] < $bws_menu_version ) {
 			$bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] = $bws_menu_version;
-			update_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
+			if ( is_multisite() )
+				update_site_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
+			else
+				update_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
 			require_once( dirname( __FILE__ ) . '/bws_menu/bws_menu.php' );
 		} else if ( ! isset( $bstwbsftwppdtplgns_added_menu ) ) {
 			$plugin_with_newer_menu = $base;
@@ -68,8 +74,8 @@ if ( ! function_exists( 'mlq_admin_default_setup' ) ) {
 			if ( file_exists( ABSPATH . $wp_content_dir . '/plugins/' . $plugin_with_newer_menu[0] . '/bws_menu/bws_menu.php' ) )
 				require_once( ABSPATH . $wp_content_dir . '/plugins/' . $plugin_with_newer_menu[0] . '/bws_menu/bws_menu.php' );
 			else
-				require_once( dirname( __FILE__ ) . '/bws_menu/bws_menu.php' );
-			$bstwbsftwppdtplgns_added_menu = true;
+				require_once( dirname( __FILE__ ) . '/bws_menu/bws_menu.php' );	
+			$bstwbsftwppdtplgns_added_menu = true;			
 		}
 
 		$icon_path    = $wp_version < 3.8 ? plugins_url( "images/plugin_icon_37.png",  __FILE__ ) : plugins_url( "images/plugin_icon_38.png",  __FILE__ );
@@ -86,6 +92,17 @@ if ( ! function_exists( 'mlq_admin_default_setup' ) ) {
  * Plugin functions for init
  * @return void
  */
+if ( ! function_exists ( 'mlq_init' ) ) {
+	function mlq_init() {
+		/* check WordPress version */
+		mlq_version_check();
+	}
+}
+
+/**
+ * Plugin functions for admin init
+ * @return void
+ */
 if ( ! function_exists ( 'mlq_admin_init' ) ) {
 	function mlq_admin_init() {
 		global $bws_plugin_info, $mlq_plugin_info;
@@ -97,8 +114,7 @@ if ( ! function_exists ( 'mlq_admin_init' ) ) {
 
 		if ( ! isset( $bws_plugin_info ) || empty( $bws_plugin_info ) )
 			$bws_plugin_info = array( 'id' => '138', 'version' => $mlq_plugin_info["Version"] );
-		/* check WordPress version */
-		mlq_version_check();
+
 		if ( isset( $_REQUEST['page'] ) && ( 'mlq_view_mail_queue' == $_REQUEST['page'] || 'mlq_settings' == $_REQUEST['page'] ) ) {
 			/* register plugin settings */
 			mlq_register_settings();
@@ -116,9 +132,13 @@ if ( ! function_exists ( 'mlq_version_check' ) ) {
 		$require_wp		=	"3.1"; /* Wordpress at least requires version */
 		$plugin			=	plugin_basename( __FILE__ );
 		if ( version_compare( $wp_version, $require_wp, "<" ) ) {
+			include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 			if ( is_plugin_active( $plugin ) ) {
 				deactivate_plugins( $plugin );
-				wp_die( "<strong>" . $mlq_plugin_info['Name'] . " </strong> " . __( 'requires', 'email-queue' ) . " <strong>WordPress " . $require_wp . "</strong> " . __( 'or higher, that is why it has been deactivated! Please upgrade WordPress and try again.', 'email-queue') . "<br /><br />" . __( 'Back to the WordPress', 'email-queue') . " <a href='" . get_admin_url( null, 'plugins.php' ) . "'>" . __( 'Plugins page', 'email-queue') . "</a>." );
+				$admin_url = ( function_exists( 'get_admin_url' ) ) ? get_admin_url( null, 'plugins.php' ) : esc_url( '/wp-admin/plugins.php' );
+				if ( ! $mlq_plugin_info )
+					$mlq_plugin_info = get_plugin_data( __FILE__, false );
+				wp_die( "<strong>" . $mlq_plugin_info['Name'] . " </strong> " . __( 'requires', 'email-queue' ) . " <strong>WordPress " . $require_wp . "</strong> " . __( 'or higher, that is why it has been deactivated! Please upgrade WordPress and try again.', 'email-queue') . "<br /><br />" . __( 'Back to the WordPress', 'email-queue') . " <a href='" . $admin_url . "'>" . __( 'Plugins page', 'email-queue') . "</a>." );
 			}
 		}
 	}
@@ -130,7 +150,7 @@ if ( ! function_exists ( 'mlq_version_check' ) ) {
  */
 if ( ! function_exists( 'mlq_register_settings' ) ) {
 	function mlq_register_settings() {
-		global $wpmu, $wpdb, $mlq_options, $mlq_options_default, $mlq_plugin_info;
+		global $wpdb, $mlq_options, $mlq_options_default, $mlq_plugin_info;
 		$mlq_db_version = '0.2';
 
 		$mlq_options_default = array(
@@ -263,7 +283,7 @@ if ( ! function_exists ( 'mlq_get_default_plugins' ) ) {
 				'plugin_name'			=> 'Contact form Pro',
 				'plugin_slug' 			=> 'contact_form_pro',
 				'plugin_link'			=> 'contact-form-pro/contact_form_pro.php',
-				'install_link'			=> 'http://bestwebsoft.com/plugin/contact-form-pro/?k=773dc97bb3551975db0e32edca1a6d7#purchase',
+				'install_link'			=> 'http://bestwebsoft.com/products/contact-form/?k=773dc97bb3551975db0e32edca1a6d7',
 				'pro_status'			=> 2,
 				'parallel_plugin_link'	=> 'contact-form-plugin/contact_form.php',
 				'plugin_function' 		=> 'cntctfrmpr_check_for_compatibility_with_mlq',
@@ -272,7 +292,7 @@ if ( ! function_exists ( 'mlq_get_default_plugins' ) ) {
 				'plugin_name'			=> 'Sender Pro', 
 				'plugin_slug' 			=> 'sender-pro',
 				'plugin_link'			=> 'sender-pro/sender-pro.php',
-				'install_link'			=> 'http://bestwebsoft.com/plugin/sender-pro/?k=dc5d1a87bdc8aeab2de40ffb99b38054#purchase',
+				'install_link'			=> 'http://bestwebsoft.com/products/sender/?k=dc5d1a87bdc8aeab2de40ffb99b38054',
 				'pro_status'			=> 2,
 				'parallel_plugin_link'	=> 'sender/sender.php',
 				'plugin_function' 		=> 'sndrpr_get_update_on_mail_from_email_queue',
@@ -281,7 +301,7 @@ if ( ! function_exists ( 'mlq_get_default_plugins' ) ) {
 				'plugin_name'			=> 'Updater Pro', 
 				'plugin_slug' 			=> 'updater_pro',
 				'plugin_link'			=> 'updater-pro/updater_pro.php',
-				'install_link'			=> 'http://bestwebsoft.com/plugin/updater-pro?k=cf633acbefbdff78545347fe08a3aecb#purchase',
+				'install_link'			=> 'http://bestwebsoft.com/products/updater/?k=cf633acbefbdff78545347fe08a3aecb',
 				'pro_status'			=> 2,
 				'parallel_plugin_link'	=> 'updater/updater.php',
 				'plugin_function' 		=> 'pdtrpr_check_for_compatibility_with_mlq',
@@ -445,7 +465,7 @@ if ( ! function_exists( 'mlq_if_mail_plugin_is_in_queue' ) ) {
  */
 if ( ! function_exists( 'mlq_get_mail_data_from_contact_form' ) ) {
 	function mlq_get_mail_data_from_contact_form( $plugin_link, $sendto, $message_subject, $message_text, $attachments ) {
-		global $wpdb, $wpmu, $mlq_mail_result;
+		global $wpdb, $mlq_mail_result;
 		/* get plugin id, in_queue_status and priority from DB based on plugin link*/
 		$plugin_info = $wpdb->get_row( "SELECT `mail_plugin_id`, `in_queue_status`, `priority_general` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='" . $plugin_link . "';", ARRAY_A );
 		/* save mail and put it in queue if plugin has in_queue_status 'ON' */
@@ -453,7 +473,7 @@ if ( ! function_exists( 'mlq_get_mail_data_from_contact_form' ) ) {
 			$plugin_id = $plugin_info['mail_plugin_id'];
 			$mail_priority = $plugin_info['priority_general'];
 			/* get contact-form options for headers */
-			$cntctfrm_options = ( 1 == $wpmu ) ? get_site_option( 'cntctfrm_options' ) : get_option( 'cntctfrm_options' );
+			$cntctfrm_options = get_option( 'cntctfrm_options' );
 			if ( 1 == $cntctfrm_options['cntctfrm_html_email'] )
 				$headers = 'Content-type: text/html; charset=utf-8' . "\n";
 			else
@@ -501,7 +521,7 @@ if ( ! function_exists( 'mlq_get_mail_data_from_contact_form' ) ) {
  */
 if ( ! function_exists( 'mlq_get_mail_data_from_contact_form_pro' ) ) {
 	function mlq_get_mail_data_from_contact_form_pro( $plugin_link, $sendto, $message_subject, $message_text, $attachments, $mlq_user_email ) {
-		global $cntctfrmpr_options, $wpdb, $wpmu, $mlq_mail_result;
+		global $cntctfrmpr_options, $wpdb, $mlq_mail_result;
 		/* get plugin id, in_queue_status and priority from DB based on plugin link*/
 		$plugin_info = $wpdb->get_row( "SELECT `mail_plugin_id`, `in_queue_status`, `priority_general` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='" . $plugin_link . "';", ARRAY_A );
 		/* save mail and put it in queue if plugin has in_queue_status 'ON' */
@@ -569,7 +589,7 @@ if ( ! function_exists( 'mlq_get_mail_data_from_contact_form_pro' ) ) {
  */
 if ( ! function_exists( 'mlq_get_mail_data_from_sender' ) ) {
 	function mlq_get_mail_data_from_sender( $plugin_link, $users_to, $message_subject, $message_text, $mail_id_in_sender ) {
-		global $wpdb, $wpmu;
+		global $wpdb;
 		/* get plugin id, in_queue_status and priority from DB based on plugin link*/
 		$plugin_info = $wpdb->get_row( "SELECT `mail_plugin_id`, `in_queue_status`, `priority_general` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='" . $plugin_link . "';", ARRAY_A );
 		/* save mail and put it in queue if plugin has in_queue_status 'ON' */
@@ -577,7 +597,7 @@ if ( ! function_exists( 'mlq_get_mail_data_from_sender' ) ) {
 			$plugin_id = $plugin_info['mail_plugin_id'];
 			$mail_priority = $plugin_info['priority_general'];
 			/* get sender options for headers */
-			$sndr_options = ( 1 == $wpmu ) ? get_site_option( 'sndr_options' ) : get_option( 'sndr_options' );
+			$sndr_options = get_option( 'sndr_options' );
 			$from_name  = 'admin_name' == $sndr_options['sndr_select_from_field'] ? $sndr_options['sndr_from_admin_name'] : $sndr_options['sndr_from_custom_name'];
 			$from_email = empty( $sndr_options['sndr_from_email'] ) ? get_option( 'admin_email' ) : $sndr_options['sndr_from_email'];
 			$sndr_headers = 'From: ' . $from_name . ' <' . $from_email . '>' . "\r\n"; 
@@ -623,7 +643,7 @@ if ( ! function_exists( 'mlq_get_mail_data_from_sender' ) ) {
  */
 if ( ! function_exists( 'mlq_start_mailout_from_sender_pro' ) ) {
 	function mlq_start_mailout_from_sender_pro( $plugin_link, $mailout_id ) {
-		global $wpdb, $wpmu;
+		global $wpdb;
 		/* get plugin id, in_queue_status and priority from DB based on plugin link*/
 		$plugin_info = $wpdb->get_row( "SELECT `mail_plugin_id`, `in_queue_status`, `priority_general` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='" . $plugin_link . "';", ARRAY_A );
 		/* save mail and put it in queue if plugin has in_queue_status 'ON' */
@@ -637,7 +657,7 @@ if ( ! function_exists( 'mlq_start_mailout_from_sender_pro' ) ) {
 			if ( '1' == $mailout_data_sndrpr['remote_delivery'] ) {
 				/* get headers for message */
 				if ( '1' != $mailout_data_sndrpr['use_plugin_settings'] ) {
-					$sndrpr_options = ( 1 == $wpmu ) ? get_site_option( 'sndrpr_options' ) : get_option( 'sndrpr_options' );
+					$sndrpr_options = get_option( 'sndrpr_options' );
 					$from_name  = 'admin_name' == $sndrpr_options['select_from_field'] ? $sndrpr_options['from_admin_name'] : $sndrpr_options['from_custom_name'];
 					$from_email = empty( $sndrpr_options['from_email'] ) ? get_option( 'admin_email' ) : $sndrpr_options['from_email'];
 				} else {
@@ -1270,7 +1290,6 @@ if ( ! function_exists( 'mlq_cron_hook_activate' ) ) {
  */
 if ( ! function_exists( 'mlq_more_reccurences' ) ) {
 	function mlq_more_reccurences( $schedules ) {
-		global $wpmu;
 		$mlq_options = ( 1 == is_multisite() ) ? get_site_option( 'mlq_options' ) : get_option( 'mlq_options' );
 		$schedules['my_cron_period'] = array( 'interval' => $mlq_options['mail_run_time'] * 60, 'display' => __( 'Your interval', 'email-queue' ) );
 		return $schedules;
@@ -1283,7 +1302,7 @@ if ( ! function_exists( 'mlq_more_reccurences' ) ) {
  */
 if ( ! function_exists( 'mlq_cron_mail' ) ) {
 	function mlq_cron_mail() {
-		global $wpdb, $wpmu;
+		global $wpdb;
 		/* get options from DB */
 		$mlq_options = ( 1 == is_multisite() ) ? get_site_option( 'mlq_options' ) : get_option( 'mlq_options' );
 		/* create an instance of phpmailer class if wp_mail is not used */
@@ -1348,7 +1367,7 @@ if ( ! function_exists( 'mlq_cron_mail' ) ) {
 						$fonts       = sndrpr_get_fonts( $letter_data['fonts'] );
 						/* get sender-pro options */
 						if ( empty( $sndrpr_options ) ) {
-							$sndrpr_options = ( 1 == $wpmu ) ? get_site_option( 'sndrpr_options' ) : get_option( 'sndrpr_options' );
+							$sndrpr_options = get_option( 'sndrpr_options' );
 						}
 						/* get letter data */
 						$body           = '';
@@ -1587,12 +1606,12 @@ if ( ! function_exists( 'mlq_cron_mail' ) ) {
 					if ( "" != $send['attachment_path'] ) {
 						/* Delete main file if Contact form options say so */
 						if ( $send['plugin_id'] == $wpdb->get_var( "SELECT `mail_plugin_id` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='contact-form-plugin/contact_form.php';" ) ) { /* if Contact form */
-							$cntctfrm_options = ( 1 == $wpmu ) ? get_site_option( 'cntctfrm_options' ) : get_option( 'cntctfrm_options' );
+							$cntctfrm_options = get_option( 'cntctfrm_options' );
 							if ( '1' == $cntctfrm_options['cntctfrm_delete_attached_file'] ) {
 								@unlink( $send['attachment_path'] );	
 							}
 						} elseif ( $send['plugin_id'] == $wpdb->get_var( "SELECT `mail_plugin_id` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='contact-form-pro/contact_form_pro.php';" ) ) { /* if Contact form Pro */
-							$cntctfrmpr_options = ( 1 == $wpmu ) ? get_site_option( 'cntctfrmpr_options' ) : get_option( 'cntctfrmpr_options' );
+							$cntctfrmpr_options = get_option( 'cntctfrmpr_options' );
 							if ( '1' == $cntctfrmpr_options['delete_attached_file'] ) {
 								@unlink( $send['attachment_path'] );	
 							}
@@ -1644,8 +1663,8 @@ if ( ! function_exists( 'mlq_cron_mail' ) ) {
  */
 if ( ! function_exists( 'mlq_update_sender_pro_mail_data' ) ) {
 	function mlq_update_sender_pro_mail_data( $mailout, $try_counter, $sent_or_not ) {
-		global $wpdb, $sndrpr_options, $wpmu;
-		$sndrpr_options = ( 1 == $wpmu ) ? get_site_option( 'sndrpr_options' ) : get_option( 'sndrpr_options' );
+		global $wpdb, $sndrpr_options;
+		$sndrpr_options = get_option( 'sndrpr_options' );
 
 		if ( $sent_or_not ) { /* if letter was sent successfully */
 			$wpdb->update(
@@ -1707,7 +1726,7 @@ if ( ! function_exists( 'mlq_update_sender_pro_mail_data' ) ) {
  */
 if ( ! function_exists( 'mlq_cron_mail_clear' ) ) {
 	function mlq_cron_mail_clear() {
-		global $wpdb, $mlq_options, $wpmu;
+		global $wpdb, $mlq_options;
 		/* get options from DB */
 		$mlq_options = ( 1 == is_multisite() ) ? get_site_option( 'mlq_options' ) : get_option( 'mlq_options' );
 		if ( $mlq_options['delete_old_mail'] ) {
@@ -1727,524 +1746,526 @@ if ( ! function_exists( 'mlq_cron_mail_clear' ) ) {
  * create class MLQ_Plugin_List to display settings of plugins,
  * that send emails via our plugin
  */	
-if ( ! class_exists( 'WP_List_Table' ) ) {
-	require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
-}
-if ( ! class_exists( 'MLQ_Plugin_List' ) ) {
-	class MLQ_Plugin_List extends WP_List_Table {
+if ( file_exists( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' ) ) {
+	if ( ! class_exists( 'WP_List_Table' ) ) {
+		require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+	}
+	if ( ! class_exists( 'MLQ_Plugin_List' ) ) {
+		class MLQ_Plugin_List extends WP_List_Table {
 
-		/**
-		* Constructor of class 
-		*/
-		function __construct() {
-			global $status, $page;
-			parent::__construct( array(
-				'singular'  => __( 'mail plugin', 'email-queue' ),
-				'plural'    => __( 'mail plugins', 'email-queue' ),
-				'ajax'      => true,
-				)
-			);
-		}
+			/**
+			* Constructor of class 
+			*/
+			function __construct() {
+				global $status, $page;
+				parent::__construct( array(
+					'singular'  => __( 'mail plugin', 'email-queue' ),
+					'plural'    => __( 'mail plugins', 'email-queue' ),
+					'ajax'      => true,
+					)
+				);
+			}
 
-		/**
-		* Function to prepare data before display 
-		* @return void
-		*/
-		function prepare_items() {
-			global $wpdb, $plugin_status;
-			$plugin_status = isset( $_REQUEST['plugin_status'] ) ? $_REQUEST['plugin_status'] : 'all';
-			if ( ! in_array( $plugin_status, array( 'all', 'not_in_queue', 'install', 'not_isntall', 'not_read_messages', 'active', 'inactive' ) ) )
-			$plugin_status = 'all';
+			/**
+			* Function to prepare data before display 
+			* @return void
+			*/
+			function prepare_items() {
+				global $wpdb, $plugin_status;
+				$plugin_status = isset( $_REQUEST['plugin_status'] ) ? $_REQUEST['plugin_status'] : 'all';
+				if ( ! in_array( $plugin_status, array( 'all', 'not_in_queue', 'install', 'not_isntall', 'not_read_messages', 'active', 'inactive' ) ) )
+				$plugin_status = 'all';
+				
+				$columns               	= $this->get_columns();
+				$hidden                	= array();
+				$sortable              	= $this->get_sortable_columns();
+				$this->found_data      	= $this->plugin_list();
+				$this->items           	= $this->found_data;
+				$per_page              	= $this->get_items_per_page( 'plugins_per_page', 20 );
+				$current_page          	= $this->get_pagenum();
+				$total_items           	= $this->items_count();
+				$this->set_pagination_args( array(
+						'total_items' 	=> $total_items,
+						'per_page'    	=> $per_page,
+					)
+				);
+			}
+
+			/**
+			* Function to show message if no plugins found
+			* @return void
+			*/
+			function no_items() { ?>
+				<p style="color:red;"><?php _e( 'No plugins found', 'email-queue' ); ?></p>
+			<?php }
+
+			/**
+			 * Function to add column of checboxes 
+			 * @param int    $item->comment_ID The custom column's unique ID number.
+			 * @return string                  with html-structure of <input type=['checkbox']>
+			 */
+			function column_cb( $item ) {
+				return sprintf( '<input id="cb_%1s" type="checkbox" name="plugin_id[]" value="%2s" />', $item['id'], $item['id'] );
+			}
+
+			/**
+			 * Get a list of columns.
+			 * @return array list of columns and titles
+			 */
+			function get_columns() {
+				$columns = array(
+					'cb'				=> '<input type="checkbox" />',
+					'title'				=> __( 'Plugin name', 'email-queue' ),
+					'install_status'	=> __( 'Installed', 'email-queue' ),
+					'active_status'		=> __( 'Activated', 'email-queue' ),
+					'priority_general'	=> __( 'General priority for all mails of plugin', 'email-queue' ),
+				);
+				return $columns;
+			}
+
+			/**
+			 * Get a list of sortable columns.
+			 * @return array list of sortable columns
+			 */
+			function get_sortable_columns() {
+				$sortable_columns = array(
+					'title'				=> array( 'title', false ),
+					'install_status'	=> array( 'install_status', false ),
+					'active_status'		=> array( 'active_status', false ),
+					'priority_general'	=> array( 'priority_general', false ),
+				);
+				return $sortable_columns;
+			}
+
+			/**
+			* Function to add filters below and above plugins list
+			* @param array $which An array of plugin states. Accepts 'Not in queue', Installed', 'Not installed', 'Active', 'Inactive'.
+			* @return void 
+			*/
+			function extra_tablenav( $which ) {
+				global $not_in_queue_count, $install_count, $not_isntall_count, $active_count, $inactive_count; ?>
+				<ul class="subsubsub">
+					<li><a class="mlq-filter<?php if ( ! isset( $_REQUEST['plugin_status'] ) || 'all' == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings"><?php _e( 'All', 'email-queue' ); ?></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "not_in_queue" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=not_in_queue"><?php _e( 'Not in queue', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $not_in_queue_count; ?> )</span></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "install" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=install"><?php _e( 'Installed ', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $install_count; ?> )</span></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "not_isntall" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=not_isntall"><?php _e( 'Not installed', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $not_isntall_count; ?> )</span></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "active" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=active"><?php _e( 'Active', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $active_count; ?> )</span></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "inactive" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=inactive"><?php _e( 'Installed but inactive', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $inactive_count; ?> )</span></a> </li>				
+				</ul> <!-- .subsubsub -->
+			<?php  }
+
+			/**
+			 * Function to add action links to drop down menu before and after plugins list depending on plugin status page
+			 * @return array of actions
+			 */
+			function get_bulk_actions() {
+				global $plugin_status;
+				$actions = array();
+				if ( in_array( $plugin_status, array( 'all', 'install', 'not_isntall', 'active', 'inactive' ) ) ) {
+					$actions['remove_plugins_from_queue'] = __( 'Remove from queue', 'email-queue' );
+				} else {
+					$actions['restore_plugins_to_queue'] = __( 'Restore to queue', 'email-queue' );
+				}
+				return $actions;
+			}
+
+			/**
+			 * Fires when the default column output is displayed for a single row.
+			 * @param string $column_name      The custom column's name.
+			 * @param int    $item->comment_ID The custom column's unique ID number.
+			 * @return void
+			 */
+			function column_default( $item, $column_name ) {
+				switch( $column_name ) {
+					case 'title':
+					case 'install_status':
+					case 'active_status':
+					case 'priority_general':
+						return $item[ $column_name ];
+					default:
+						return print_r( $item, true ) ;
+				}
+			}
+
+			/**
+			 * Function to add action links to plugin_name column depenting on status page
+			 * @param int      $item->comment_ID The custom column's unique ID number.
+			 * @return string                     with action links
+			 */
+			function column_title( $item ) {
+				global $plugin_status;
+				$actions = array();
+				if ( in_array( $plugin_status, array( 'all', 'install', 'not_isntall', 'active', 'inactive' ) ) ) {
+					$actions['remove_plugin_from_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=remove_plugin_from_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_out_' . $item['id'] ) . '">' . __( 'Remove from queue', 'email-queue' ) . '</a>';
+				} else {
+					$actions['restore_plugin_to_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=restore_plugin_to_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_in_' . $item['id'] ) . '">' . __( 'Restore to queue', 'email-queue' ) . '</a>';
+				}
+				return sprintf( '%1$s %2$s', $item['title'], $this->row_actions( $actions ) );
+			}
 			
-			$columns               	= $this->get_columns();
-			$hidden                	= array();
-			$sortable              	= $this->get_sortable_columns();
-			$this->found_data      	= $this->plugin_list();
-			$this->items           	= $this->found_data;
-			$per_page              	= $this->get_items_per_page( 'plugins_per_page', 20 );
-			$current_page          	= $this->get_pagenum();
-			$total_items           	= $this->items_count();
-			$this->set_pagination_args( array(
-					'total_items' 	=> $total_items,
-					'per_page'    	=> $per_page,
-				)
-			);
-		}
-
-		/**
-		* Function to show message if no plugins found
-		* @return void
-		*/
-		function no_items() { ?>
-			<p style="color:red;"><?php _e( 'No plugins found', 'email-queue' ); ?></p>
-		<?php }
-
-		/**
-		 * Function to add column of checboxes 
-		 * @param int    $item->comment_ID The custom column's unique ID number.
-		 * @return string                  with html-structure of <input type=['checkbox']>
-		 */
-		function column_cb( $item ) {
-			return sprintf( '<input id="cb_%1s" type="checkbox" name="plugin_id[]" value="%2s" />', $item['id'], $item['id'] );
-		}
-
-		/**
-		 * Get a list of columns.
-		 * @return array list of columns and titles
-		 */
-		function get_columns() {
-			$columns = array(
-				'cb'				=> '<input type="checkbox" />',
-				'title'				=> __( 'Plugin name', 'email-queue' ),
-				'install_status'	=> __( 'Installed', 'email-queue' ),
-				'active_status'		=> __( 'Activated', 'email-queue' ),
-				'priority_general'	=> __( 'General priority for all mails of plugin', 'email-queue' ),
-			);
-			return $columns;
-		}
-
-		/**
-		 * Get a list of sortable columns.
-		 * @return array list of sortable columns
-		 */
-		function get_sortable_columns() {
-			$sortable_columns = array(
-				'title'				=> array( 'title', false ),
-				'install_status'	=> array( 'install_status', false ),
-				'active_status'		=> array( 'active_status', false ),
-				'priority_general'	=> array( 'priority_general', false ),
-			);
-			return $sortable_columns;
-		}
-
-		/**
-		* Function to add filters below and above plugins list
-		* @param array $which An array of plugin states. Accepts 'Not in queue', Installed', 'Not installed', 'Active', 'Inactive'.
-		* @return void 
-		*/
-		function extra_tablenav( $which ) {
-			global $not_in_queue_count, $install_count, $not_isntall_count, $active_count, $inactive_count; ?>
-			<ul class="subsubsub">
-				<li><a class="mlq-filter<?php if ( ! isset( $_REQUEST['plugin_status'] ) || 'all' == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings"><?php _e( 'All', 'email-queue' ); ?></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "not_in_queue" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=not_in_queue"><?php _e( 'Not in queue', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $not_in_queue_count; ?> )</span></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "install" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=install"><?php _e( 'Installed ', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $install_count; ?> )</span></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "not_isntall" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=not_isntall"><?php _e( 'Not installed', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $not_isntall_count; ?> )</span></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "active" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=active"><?php _e( 'Active', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $active_count; ?> )</span></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['plugin_status'] ) && "inactive" == $_REQUEST['plugin_status'] ) { echo " current"; } ?>" href="?page=mlq_settings&plugin_status=inactive"><?php _e( 'Installed but inactive', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $inactive_count; ?> )</span></a> </li>				
-			</ul> <!-- .subsubsub -->
-		<?php  }
-
-		/**
-		 * Function to add action links to drop down menu before and after plugins list depending on plugin status page
-		 * @return array of actions
-		 */
-		function get_bulk_actions() {
-			global $plugin_status;
-			$actions = array();
-			if ( in_array( $plugin_status, array( 'all', 'install', 'not_isntall', 'active', 'inactive' ) ) ) {
-				$actions['remove_plugins_from_queue'] = __( 'Remove from queue', 'email-queue' );
-			} else {
-				$actions['restore_plugins_to_queue'] = __( 'Restore to queue', 'email-queue' );
+			/**
+			 * Function to check if plugins are installed
+			 */
+			function is_plugin_install( $plugin_path ) {
+				global $plugins_list;
+				if ( array_key_exists( $plugin_path, $plugins_list ) ) {
+					return true;
+				} else {
+					return false;
+				}
 			}
-			return $actions;
-		}
-
-		/**
-		 * Fires when the default column output is displayed for a single row.
-		 * @param string $column_name      The custom column's name.
-		 * @param int    $item->comment_ID The custom column's unique ID number.
-		 * @return void
-		 */
-		function column_default( $item, $column_name ) {
-			switch( $column_name ) {
-				case 'title':
-				case 'install_status':
-				case 'active_status':
-				case 'priority_general':
-					return $item[ $column_name ];
-				default:
-					return print_r( $item, true ) ;
-			}
-		}
-
-		/**
-		 * Function to add action links to plugin_name column depenting on status page
-		 * @param int      $item->comment_ID The custom column's unique ID number.
-		 * @return string                     with action links
-		 */
-		function column_title( $item ) {
-			global $plugin_status;
-			$actions = array();
-			if ( in_array( $plugin_status, array( 'all', 'install', 'not_isntall', 'active', 'inactive' ) ) ) {
-				$actions['remove_plugin_from_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=remove_plugin_from_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_out_' . $item['id'] ) . '">' . __( 'Remove from queue', 'email-queue' ) . '</a>';
-			} else {
-				$actions['restore_plugin_to_queue'] = '<a href="' . wp_nonce_url( '?page=mlq_settings&action=restore_plugin_to_queue&plugin_id=' . $item['id'] . '&plugin_status=' . $plugin_status, 'plugin_in_' . $item['id'] ) . '">' . __( 'Restore to queue', 'email-queue' ) . '</a>';
-			}
-			return sprintf( '%1$s %2$s', $item['title'], $this->row_actions( $actions ) );
-		}
-		
-		/**
-		 * Function to check if plugins are installed
-		 */
-		function is_plugin_install( $plugin_path ) {
-			global $plugins_list;
-			if ( array_key_exists( $plugin_path, $plugins_list ) ) {
-				return true;
-			} else {
-				return false;
-			}
-		}
-		/**
-		 * Function to update plugin info in DB before display
-		 */
-		function check_plugin_install_and_active() {
-			global $wpdb, $plugins_list, $mlq_active_plugin_list;
-			require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-			$plugins_list = get_plugins();
-			/* get mail-able plugin list from our table */
-			$plugins_in_db = $wpdb->get_results( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins`", ARRAY_A );
-			/* get an array of all active plugins if multisite */
-			if ( is_multisite() ) {
-				/* create an array for a list of all active plugins */
-				$mlq_active_plugin_list = array();
-				/* get array with ids of subsite-blogs */
-				$mlq_blog_ids = $wpdb->get_col( "SELECT `blog_id` FROM `" . $wpdb->base_prefix . "blogs` WHERE `blog_id`<>`site_id` " );
-				if ( ! empty( $mlq_blog_ids ) ) {
-					/* start putting together sql-query that brings us list of all active plugins on all sites */
-					$i = 0;
-					$last_blog = count( $mlq_blog_ids );
-					$sql_query = '';
-					foreach( $mlq_blog_ids as $mlq_blog_id ) {
-						$sql_query .= 
-							"SELECT `option_value` FROM `" . $wpdb->base_prefix . $mlq_blog_id . "_" . "options` WHERE `option_name` LIKE '%active_plugins%'";
-						$i ++;
-						if ( $last_blog !== $i ) { /* if this is not last blog_id in our array */
-							$sql_query .= " UNION ";
-						} else {
-							$sql_query .= ";";
+			/**
+			 * Function to update plugin info in DB before display
+			 */
+			function check_plugin_install_and_active() {
+				global $wpdb, $plugins_list, $mlq_active_plugin_list;
+				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+				$plugins_list = get_plugins();
+				/* get mail-able plugin list from our table */
+				$plugins_in_db = $wpdb->get_results( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins`", ARRAY_A );
+				/* get an array of all active plugins if multisite */
+				if ( is_multisite() ) {
+					/* create an array for a list of all active plugins */
+					$mlq_active_plugin_list = array();
+					/* get array with ids of subsite-blogs */
+					$mlq_blog_ids = $wpdb->get_col( "SELECT `blog_id` FROM `" . $wpdb->base_prefix . "blogs` WHERE `blog_id`<>`site_id` " );
+					if ( ! empty( $mlq_blog_ids ) ) {
+						/* start putting together sql-query that brings us list of all active plugins on all sites */
+						$i = 0;
+						$last_blog = count( $mlq_blog_ids );
+						$sql_query = '';
+						foreach( $mlq_blog_ids as $mlq_blog_id ) {
+							$sql_query .= 
+								"SELECT `option_value` FROM `" . $wpdb->base_prefix . $mlq_blog_id . "_" . "options` WHERE `option_name` LIKE '%active_plugins%'";
+							$i ++;
+							if ( $last_blog !== $i ) { /* if this is not last blog_id in our array */
+								$sql_query .= " UNION ";
+							} else {
+								$sql_query .= ";";
+							}
 						}
-					}
-					/* get list of all active plugin as an array of serialized strings */
-					$active_blog_plugins = $wpdb->get_col( $sql_query );
-					foreach ($active_blog_plugins as $active_blog_plugin ) {
-						$active_blog_plugin = unserialize( $active_blog_plugin );
-						if ( ! empty( $active_blog_plugin ) ) {
-							/* unserialize and loop through non-empty plugin list on every subsite */
-							foreach ( $active_blog_plugin as $active_plugin ) {
-								/* add active plugin to our list if it's not already there */
-								if ( ! in_array( $active_plugin, $mlq_active_plugin_list ) ) {
-									$mlq_active_plugin_list[] = $active_plugin;
+						/* get list of all active plugin as an array of serialized strings */
+						$active_blog_plugins = $wpdb->get_col( $sql_query );
+						foreach ($active_blog_plugins as $active_blog_plugin ) {
+							$active_blog_plugin = unserialize( $active_blog_plugin );
+							if ( ! empty( $active_blog_plugin ) ) {
+								/* unserialize and loop through non-empty plugin list on every subsite */
+								foreach ( $active_blog_plugin as $active_plugin ) {
+									/* add active plugin to our list if it's not already there */
+									if ( ! in_array( $active_plugin, $mlq_active_plugin_list ) ) {
+										$mlq_active_plugin_list[] = $active_plugin;
+									}
 								}
 							}
 						}
-					}
-				} 
-				/* get active plugins on main site */
-				$active_blog_plugins = get_option( 'active_plugins' );
-				/* add them to our list */
-				$mlq_active_plugin_list = array_merge( $mlq_active_plugin_list, $active_blog_plugins );
-				/* get active plugins on network */
-				$network_active_plugins = get_site_option( 'active_sitewide_plugins');
-				foreach ( $network_active_plugins as $active_plugin_link => $plugin_value ) {
-					/* add network active plugin to our list if it's not already there */
-					if ( ! in_array( $active_plugin_link, $mlq_active_plugin_list ) ) {
-						$mlq_active_plugin_list[] = $active_plugin_link;
-					}
-				}
-			} else {
-				/* get an array of active plugins if not multisite */
-				$mlq_active_plugin_list = get_option( 'active_plugins' );
-			}
-
-			/* check if every plugin from our list is installed */
-			foreach ( $plugins_in_db as $plugin ) {
-				/* update DB info on install-status */
-				if ( '1' == $plugin['pro_status'] ) {
-					/* if it's free plugin that has Pro version */
-					$plugin_pro = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=2 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
-				} elseif ( '2' == $plugin['pro_status'] ) {
-					/* if it's Pro plugin - look for free version */
-					$plugin_free = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=1 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
-				}
-				if ( '0' == $plugin['pro_status'] || '1' == $plugin['pro_status'] && empty( $plugin_pro ) || '2' == $plugin['pro_status'] && empty( $plugin_free ) ) {
-					/*if 1) no Pro; 2) has Pro, but it's not in DB; 3) is Pro, but free ver isn't in DB */
-					if ( $this->is_plugin_install( $plugin['plugin_link'] ) ) {
-						/* if installed */
-						if ( '1' != $plugin['install_status'] ) {
-							$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-								array( 'install_status'	=> 1, ),
-								array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-							);
-						}
-						/* if installed, check if active and update DB info on active-status*/
-						if ( in_array( $plugin['plugin_link'], $mlq_active_plugin_list ) ) {
-							if ( '1' != $plugin['active_status'] ) {
-								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-									array( 'active_status'	=> 1, ),
-									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-								);
-							}
-						} else {
-							/* if not active */
-							if ( '0' != $plugin['active_status'] ) {
-								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-									array( 'active_status'	=> 0, ),
-									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-								);
-							}
-						}
-					} else {
-						/* if not installed */
-						if ( '0' != $plugin['install_status'] ) {
-							$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-								array(
-									'install_status'	=> 0,
-									'active_status'		=> 0,
-								),
-								array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-							);
+					} 
+					/* get active plugins on main site */
+					$active_blog_plugins = get_option( 'active_plugins' );
+					/* add them to our list */
+					$mlq_active_plugin_list = array_merge( $mlq_active_plugin_list, $active_blog_plugins );
+					/* get active plugins on network */
+					$network_active_plugins = get_site_option( 'active_sitewide_plugins');
+					foreach ( $network_active_plugins as $active_plugin_link => $plugin_value ) {
+						/* add network active plugin to our list if it's not already there */
+						if ( ! in_array( $active_plugin_link, $mlq_active_plugin_list ) ) {
+							$mlq_active_plugin_list[] = $active_plugin_link;
 						}
 					}
-				} elseif ( '1' == $plugin['pro_status'] && ! empty( $plugin_pro ) ) {
-					/* has Pro and it's in DB */
-					if ( $this->is_plugin_install( $plugin['plugin_link'] ) || $this->is_plugin_install( $plugin_pro['plugin_link'] ) ) {
-						/* if installed */
-						if ( '1' != $plugin['install_status'] ) {
-							$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-								array( 'install_status'	=> 1, ),
-								array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-							);
-						}
-						if ( '1' != $plugin_pro['install_status'] ) {
-							$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-								array( 'install_status'	=> 1, ),
-								array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
-							);
-						}
-						/* if installed, check if active and update DB info on active-status*/
-						if ( in_array( $plugin['plugin_link'], $mlq_active_plugin_list ) || in_array( $plugin_pro['plugin_link'], $mlq_active_plugin_list ) ) {
-							/* if active */
-							if ( '1' != $plugin['active_status'] ) {
-								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-									array( 'active_status'	=> 1, ),
-									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-								);
-							}
-							if ( '1' != $plugin_pro['active_status'] ) {
-								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-									array( 'active_status'	=> 1, ),
-									array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
-								);
-							}
-						} else {
-							/* if not active */
-							if ( '0' != $plugin['active_status'] ) {
-								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-									array( 'active_status'	=> 0, ),
-									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-								);
-							}
-							if ( '0' != $plugin_pro['active_status'] ) {
-								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-									array( 'active_status'	=> 0, ),
-									array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
-								);
-							}
-						}
-					} else {
-						/* if not installed */
-						if ( '0' != $plugin['install_status'] ) {
-							$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-								array(
-									'install_status'	=> 0,
-									'active_status'		=> 0,
-								),
-								array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
-							);
-						}
-						if ( '0' != $plugin_pro['install_status'] ) {
-							/* if not installed */
-							$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-								array(
-									'install_status'	=> 0,
-									'active_status'		=> 0,
-								),
-								array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
-							);
-						}
-					}
-				}
-			}
-		}
-
-		/**
-		 * Function to get plugin list
-		 * @return array list of plugins
-		 */
-		function plugin_list() {
-			global $wpdb;
-			$i                  = 0;
-			$plugins_list       = array();  
-			$per_page = intval( get_user_option( 'plugins_per_page' ) );
-			if ( empty( $per_page ) || $per_page < 1 ) {
-				$per_page = 30;
-			}
-			$start_row = ( isset( $_REQUEST['paged'] ) && '1' != $_REQUEST['paged'] ) ? $per_page * ( absint( $_REQUEST['paged'] - 1 ) ) : 0;
-			if ( isset( $_REQUEST['orderby'] ) ) {
-				switch ( $_REQUEST['orderby'] ) {
-					case 'title':
-						$order_by = 'plugin_name';
-						break;
-					case 'install_status':
-						$order_by = 'install_status';
-						break;
-					case 'active_status':
-						$order_by = 'active_status';
-						break;
-					case 'priority_general':
-						$order_by = 'priority_general';
-						break;
-					default:
-						$order_by = 'mail_plugin_id';
-						break;
-				}
-			} else {
-				$order_by = 'mail_plugin_id';
-			}
-			$order     = isset( $_REQUEST['order'] ) ? $_REQUEST['order'] : 'ASC';
-			$sql_query = "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` ";
-			if ( isset( $_REQUEST['plugin_status'] ) ) {
-				switch ( $_REQUEST['plugin_status'] ) {
-					case 'install':
-						$sql_query .= "WHERE `install_status`=1 AND `in_queue_status`=1";
-						break;
-					case 'not_isntall':
-						$sql_query .= "WHERE `install_status`=0 AND `in_queue_status`=1";
-						break;
-					case 'active':
-						$sql_query .= "WHERE `install_status`=1 AND `active_status`=1 AND `in_queue_status`=1";
-						break;
-					case 'inactive':
-						$sql_query .= "WHERE `install_status`=1 AND `active_status`=0 AND `in_queue_status`=1";
-						break;
-					case 'not_in_queue':
-						$sql_query .= "WHERE `in_queue_status`=0";
-						break;
-					default:
-						$sql_query .= "WHERE `in_queue_status`=1";
-						break;
-				}
-			} else {
-				$sql_query .= " WHERE `in_queue_status`=1";
-			}
-			
-			$sql_query   .= " ORDER BY " . $order_by . " " . $order . " LIMIT " . $per_page . " OFFSET " . $start_row . ";";
-			$plugins_data = $wpdb->get_results( $sql_query, ARRAY_A );
-			foreach ( $plugins_data as $plugin ) {
-				if ( '1' == $plugin['pro_status'] ) {
-					/* if it's free plugin that has Pro version */
-					$plugin_pro = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=2 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
-				} elseif ( '2' == $plugin['pro_status'] ) {
-					/* if it's Pro plugin - look for free version */
-					$plugin_free = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=1 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
-				}
-				if ( '2' == $plugin['pro_status'] && ! empty( $plugin_free ) ) {
-					continue;
-				}
-				/* start making plugin list */
-				$plugins_list[$i]					= array();
-				$plugins_list[$i]['id']				= $plugin['mail_plugin_id'];
-				/* display title based on whether there's two version of plugin (free and Pro) */
-				$plugins_list[$i]['title'] 			= '1' == $plugin['pro_status'] && ! empty( $plugin_pro ) ? $plugin['plugin_name'] . '&nbsp;<span class="mlq-linking-word">' . __( 'and', 'email-queue' ) . '</span>&nbsp;' . $plugin_pro['plugin_name'] : $plugin['plugin_name'];
-				/* get install and active status */
-				$plugins_list[$i]['install_status']	= ( '1' == $plugin['install_status'] ) ? __( 'Yes', 'email-queue' ) : __( 'No', 'email-queue' );
-				$plugins_list[$i]['active_status']	= ( '1' == $plugin['active_status'] ) ? __( 'Yes', 'email-queue' ) : __( 'No', 'email-queue' );
-				/* Display select-list with priority values if plugin is installed, activated and has "in_queue" status */
-				if ( '1' == $plugin['active_status'] && '1' == $plugin['in_queue_status'] )	{
-					$plugins_list[$i]['priority_general'] ='<select name="priority[' . $plugin['plugin_slug'] . ']"><option disabled >' . __( "Choose a priority", 'email-queue' ) . '</option><option value="5" '; 
-					if ( 5 == $plugin['priority_general'] ) $plugins_list[$i]['priority_general'] .= 'selected="selected"';
-					$plugins_list[$i]['priority_general'] .= '>' . __( "High priority", 'email-queue' ) . '</option><option value="3" ';
-					if ( 3 == $plugin['priority_general'] ) $plugins_list[$i]['priority_general'] .= 'selected="selected"';
-					$plugins_list[$i]['priority_general'] .= '>' . __( "Normal priority", 'email-queue' ) . '</option><option value="1" ';
-					if ( 1 == $plugin['priority_general'] ) $plugins_list[$i]['priority_general'] .= 'selected="selected"';
-					$plugins_list[$i]['priority_general'] .= '>' . __( "Low priority", 'email-queue' ) . '</option></select>';
-				} else if ( '0' == $plugin['in_queue_status'] ) {
-					/* if not in queue */
-					$plugins_list[$i]['priority_general'] = __( 'You should', 'email-queue' ) . '&nbsp;' . sprintf( '<a href="?page=mlq_settings&action=restore_plugin_to_queue&plugin_id[]=%s' . '&plugin_status=not_in_queue">' . __( 'restore', 'email-queue' ) . '</a>', $plugin['mail_plugin_id'] ) . '&nbsp;' . __( 'plugin back to queue to set a priority', 'email-queue' );
 				} else {
-					/* if not activated or installed - display links to do so */
-					if ( '0' == $plugin['install_status'] ) {
-						if ( '0' == $plugin['pro_status'] || '1' == $plugin['pro_status'] && empty( $plugin_pro ) || '2' == $plugin['pro_status'] && empty( $plugin_free ) ) {
-							/* if 1) no Pro; 2) has Pro, but it's not in DB; 3) is Pro, but free version isn't in DB */
-							$plugins_list[$i]['priority_general'] = __( 'You need to', 'email-queue' ) . '&nbsp;' . '<a href="' . $plugin['install_link'] . '" title="' . __( "You need to install plugin to set a priority", 'email-queue' ) . '" target="_blank">' . __( "install", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'plugin to set a priority', 'email-queue' );
+					/* get an array of active plugins if not multisite */
+					$mlq_active_plugin_list = get_option( 'active_plugins' );
+				}
+
+				/* check if every plugin from our list is installed */
+				foreach ( $plugins_in_db as $plugin ) {
+					/* update DB info on install-status */
+					if ( '1' == $plugin['pro_status'] ) {
+						/* if it's free plugin that has Pro version */
+						$plugin_pro = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=2 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
+					} elseif ( '2' == $plugin['pro_status'] ) {
+						/* if it's Pro plugin - look for free version */
+						$plugin_free = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=1 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
+					}
+					if ( '0' == $plugin['pro_status'] || '1' == $plugin['pro_status'] && empty( $plugin_pro ) || '2' == $plugin['pro_status'] && empty( $plugin_free ) ) {
+						/*if 1) no Pro; 2) has Pro, but it's not in DB; 3) is Pro, but free ver isn't in DB */
+						if ( $this->is_plugin_install( $plugin['plugin_link'] ) ) {
+							/* if installed */
+							if ( '1' != $plugin['install_status'] ) {
+								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+									array( 'install_status'	=> 1, ),
+									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+								);
+							}
+							/* if installed, check if active and update DB info on active-status*/
+							if ( in_array( $plugin['plugin_link'], $mlq_active_plugin_list ) ) {
+								if ( '1' != $plugin['active_status'] ) {
+									$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+										array( 'active_status'	=> 1, ),
+										array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+									);
+								}
+							} else {
+								/* if not active */
+								if ( '0' != $plugin['active_status'] ) {
+									$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+										array( 'active_status'	=> 0, ),
+										array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+									);
+								}
+							}
 						} else {
-							/* has Pro and it's in DB */
-							$plugins_list[$i]['priority_general'] = __( 'You need to', 'email-queue' ) . '&nbsp;' . '<a href="' . $plugin['install_link'] . '" title="' . __( "Install free version", 'email-queue' ) . '" target="_blank">' . __( "install free", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'or', 'email-queue' ) . '&nbsp;' . '<a href="' . $plugin_pro['install_link'] . '" title="' . __( "Buy Pro version", 'email-queue' ) . '" target="_blank">' . __( "buy Pro", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'version of plugin to set a priority', 'email-queue' ) ;
+							/* if not installed */
+							if ( '0' != $plugin['install_status'] ) {
+								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+									array(
+										'install_status'	=> 0,
+										'active_status'		=> 0,
+									),
+									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+								);
+							}
 						}
-					} else {
-						/* if need activation */
-						$plugins_list[$i]['priority_general'] = __( 'You need to', 'email-queue' ) . '&nbsp;' . '<a href="plugins.php" title="' . __( "You need to activate plugin to set a priority", 'email-queue' ) . '" target="_blank">' . __( "activate", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'plugin to set a priority', 'email-queue' ) ;
+					} elseif ( '1' == $plugin['pro_status'] && ! empty( $plugin_pro ) ) {
+						/* has Pro and it's in DB */
+						if ( $this->is_plugin_install( $plugin['plugin_link'] ) || $this->is_plugin_install( $plugin_pro['plugin_link'] ) ) {
+							/* if installed */
+							if ( '1' != $plugin['install_status'] ) {
+								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+									array( 'install_status'	=> 1, ),
+									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+								);
+							}
+							if ( '1' != $plugin_pro['install_status'] ) {
+								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+									array( 'install_status'	=> 1, ),
+									array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
+								);
+							}
+							/* if installed, check if active and update DB info on active-status*/
+							if ( in_array( $plugin['plugin_link'], $mlq_active_plugin_list ) || in_array( $plugin_pro['plugin_link'], $mlq_active_plugin_list ) ) {
+								/* if active */
+								if ( '1' != $plugin['active_status'] ) {
+									$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+										array( 'active_status'	=> 1, ),
+										array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+									);
+								}
+								if ( '1' != $plugin_pro['active_status'] ) {
+									$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+										array( 'active_status'	=> 1, ),
+										array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
+									);
+								}
+							} else {
+								/* if not active */
+								if ( '0' != $plugin['active_status'] ) {
+									$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+										array( 'active_status'	=> 0, ),
+										array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+									);
+								}
+								if ( '0' != $plugin_pro['active_status'] ) {
+									$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+										array( 'active_status'	=> 0, ),
+										array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
+									);
+								}
+							}
+						} else {
+							/* if not installed */
+							if ( '0' != $plugin['install_status'] ) {
+								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+									array(
+										'install_status'	=> 0,
+										'active_status'		=> 0,
+									),
+									array( 'mail_plugin_id'	=> $plugin['mail_plugin_id'], )
+								);
+							}
+							if ( '0' != $plugin_pro['install_status'] ) {
+								/* if not installed */
+								$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
+									array(
+										'install_status'	=> 0,
+										'active_status'		=> 0,
+									),
+									array( 'mail_plugin_id'	=> $plugin_pro['mail_plugin_id'], )
+								);
+							}
+						}
 					}
 				}
-				$i ++;
 			}
-			return $plugins_list;
-		}
 
-		/**
-		 * Function to get number of all plugins
-		 * @return sting plugins number
-		 */
-		public function items_count() {
-			global $wpdb, $all_count, $not_in_queue_count, $install_count, $not_isntall_count, $active_count, $inactive_count;
-			$all_count = $not_in_queue_count = $install_count = $not_isntall_count = $active_count = $inactive_count = 0;
-			$plugins_data = $wpdb->get_results( "SELECT * FROM " . $wpdb->base_prefix . "mlq_mail_plugins;", ARRAY_A );
-			foreach ( $plugins_data as $plugin ) {
-				if ( '1' == $plugin['pro_status'] ) {
-					/* if it's free plugin that has Pro version */
-					$plugin_pro = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=2 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
-				} elseif ( '2' == $plugin['pro_status'] ) {
-					/* if it's Pro plugin - look for free version */
-					$plugin_free = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=1 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
+			/**
+			 * Function to get plugin list
+			 * @return array list of plugins
+			 */
+			function plugin_list() {
+				global $wpdb;
+				$i                  = 0;
+				$plugins_list       = array();  
+				$per_page = intval( get_user_option( 'plugins_per_page' ) );
+				if ( empty( $per_page ) || $per_page < 1 ) {
+					$per_page = 30;
 				}
-				if ( '0' == $plugin['pro_status'] || '1' == $plugin['pro_status'] && empty( $plugin_pro ) || '2' == $plugin['pro_status'] && empty( $plugin_free ) || '1' == $plugin['pro_status'] && ! empty( $plugin_pro ) ) {
-					if ( '1' == $plugin['in_queue_status'] ) {
-						$install_count = ( '1' == $plugin['install_status'] ) ? ++$install_count : $install_count;
-						$not_isntall_count = ( '1' != $plugin['install_status'] ) ? ++$not_isntall_count : $not_isntall_count;
-						$active_count = ( '1' == $plugin['active_status'] ) ? ++$active_count : $active_count;
-						$inactive_count = ( '1' == $plugin['install_status'] && '1' != $plugin['active_status'] ) ? ++$inactive_count : $inactive_count;
-						$all_count++;
+				$start_row = ( isset( $_REQUEST['paged'] ) && '1' != $_REQUEST['paged'] ) ? $per_page * ( absint( $_REQUEST['paged'] - 1 ) ) : 0;
+				if ( isset( $_REQUEST['orderby'] ) ) {
+					switch ( $_REQUEST['orderby'] ) {
+						case 'title':
+							$order_by = 'plugin_name';
+							break;
+						case 'install_status':
+							$order_by = 'install_status';
+							break;
+						case 'active_status':
+							$order_by = 'active_status';
+							break;
+						case 'priority_general':
+							$order_by = 'priority_general';
+							break;
+						default:
+							$order_by = 'mail_plugin_id';
+							break;
+					}
+				} else {
+					$order_by = 'mail_plugin_id';
+				}
+				$order     = isset( $_REQUEST['order'] ) ? $_REQUEST['order'] : 'ASC';
+				$sql_query = "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` ";
+				if ( isset( $_REQUEST['plugin_status'] ) ) {
+					switch ( $_REQUEST['plugin_status'] ) {
+						case 'install':
+							$sql_query .= "WHERE `install_status`=1 AND `in_queue_status`=1";
+							break;
+						case 'not_isntall':
+							$sql_query .= "WHERE `install_status`=0 AND `in_queue_status`=1";
+							break;
+						case 'active':
+							$sql_query .= "WHERE `install_status`=1 AND `active_status`=1 AND `in_queue_status`=1";
+							break;
+						case 'inactive':
+							$sql_query .= "WHERE `install_status`=1 AND `active_status`=0 AND `in_queue_status`=1";
+							break;
+						case 'not_in_queue':
+							$sql_query .= "WHERE `in_queue_status`=0";
+							break;
+						default:
+							$sql_query .= "WHERE `in_queue_status`=1";
+							break;
+					}
+				} else {
+					$sql_query .= " WHERE `in_queue_status`=1";
+				}
+				
+				$sql_query   .= " ORDER BY " . $order_by . " " . $order . " LIMIT " . $per_page . " OFFSET " . $start_row . ";";
+				$plugins_data = $wpdb->get_results( $sql_query, ARRAY_A );
+				foreach ( $plugins_data as $plugin ) {
+					if ( '1' == $plugin['pro_status'] ) {
+						/* if it's free plugin that has Pro version */
+						$plugin_pro = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=2 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
+					} elseif ( '2' == $plugin['pro_status'] ) {
+						/* if it's Pro plugin - look for free version */
+						$plugin_free = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=1 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
+					}
+					if ( '2' == $plugin['pro_status'] && ! empty( $plugin_free ) ) {
+						continue;
+					}
+					/* start making plugin list */
+					$plugins_list[$i]					= array();
+					$plugins_list[$i]['id']				= $plugin['mail_plugin_id'];
+					/* display title based on whether there's two version of plugin (free and Pro) */
+					$plugins_list[$i]['title'] 			= '1' == $plugin['pro_status'] && ! empty( $plugin_pro ) ? $plugin['plugin_name'] . '&nbsp;<span class="mlq-linking-word">' . __( 'and', 'email-queue' ) . '</span>&nbsp;' . $plugin_pro['plugin_name'] : $plugin['plugin_name'];
+					/* get install and active status */
+					$plugins_list[$i]['install_status']	= ( '1' == $plugin['install_status'] ) ? __( 'Yes', 'email-queue' ) : __( 'No', 'email-queue' );
+					$plugins_list[$i]['active_status']	= ( '1' == $plugin['active_status'] ) ? __( 'Yes', 'email-queue' ) : __( 'No', 'email-queue' );
+					/* Display select-list with priority values if plugin is installed, activated and has "in_queue" status */
+					if ( '1' == $plugin['active_status'] && '1' == $plugin['in_queue_status'] )	{
+						$plugins_list[$i]['priority_general'] ='<select name="priority[' . $plugin['plugin_slug'] . ']"><option disabled >' . __( "Choose a priority", 'email-queue' ) . '</option><option value="5" '; 
+						if ( 5 == $plugin['priority_general'] ) $plugins_list[$i]['priority_general'] .= 'selected="selected"';
+						$plugins_list[$i]['priority_general'] .= '>' . __( "High priority", 'email-queue' ) . '</option><option value="3" ';
+						if ( 3 == $plugin['priority_general'] ) $plugins_list[$i]['priority_general'] .= 'selected="selected"';
+						$plugins_list[$i]['priority_general'] .= '>' . __( "Normal priority", 'email-queue' ) . '</option><option value="1" ';
+						if ( 1 == $plugin['priority_general'] ) $plugins_list[$i]['priority_general'] .= 'selected="selected"';
+						$plugins_list[$i]['priority_general'] .= '>' . __( "Low priority", 'email-queue' ) . '</option></select>';
+					} else if ( '0' == $plugin['in_queue_status'] ) {
+						/* if not in queue */
+						$plugins_list[$i]['priority_general'] = __( 'You should', 'email-queue' ) . '&nbsp;' . sprintf( '<a href="?page=mlq_settings&action=restore_plugin_to_queue&plugin_id[]=%s' . '&plugin_status=not_in_queue">' . __( 'restore', 'email-queue' ) . '</a>', $plugin['mail_plugin_id'] ) . '&nbsp;' . __( 'plugin back to queue to set a priority', 'email-queue' );
 					} else {
-						$not_in_queue_count++;
+						/* if not activated or installed - display links to do so */
+						if ( '0' == $plugin['install_status'] ) {
+							if ( '0' == $plugin['pro_status'] || '1' == $plugin['pro_status'] && empty( $plugin_pro ) || '2' == $plugin['pro_status'] && empty( $plugin_free ) ) {
+								/* if 1) no Pro; 2) has Pro, but it's not in DB; 3) is Pro, but free version isn't in DB */
+								$plugins_list[$i]['priority_general'] = __( 'You need to', 'email-queue' ) . '&nbsp;' . '<a href="' . $plugin['install_link'] . '" title="' . __( "You need to install plugin to set a priority", 'email-queue' ) . '" target="_blank">' . __( "install", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'plugin to set a priority', 'email-queue' );
+							} else {
+								/* has Pro and it's in DB */
+								$plugins_list[$i]['priority_general'] = __( 'You need to', 'email-queue' ) . '&nbsp;' . '<a href="' . $plugin['install_link'] . '" title="' . __( "Install free version", 'email-queue' ) . '" target="_blank">' . __( "install free", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'or', 'email-queue' ) . '&nbsp;' . '<a href="' . $plugin_pro['install_link'] . '" title="' . __( "Buy Pro version", 'email-queue' ) . '" target="_blank">' . __( "buy Pro", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'version of plugin to set a priority', 'email-queue' ) ;
+							}
+						} else {
+							/* if need activation */
+							$plugins_list[$i]['priority_general'] = __( 'You need to', 'email-queue' ) . '&nbsp;' . '<a href="plugins.php" title="' . __( "You need to activate plugin to set a priority", 'email-queue' ) . '" target="_blank">' . __( "activate", 'email-queue' ) . '</a>' . '&nbsp;' . __( 'plugin to set a priority', 'email-queue' ) ;
+						}
+					}
+					$i ++;
+				}
+				return $plugins_list;
+			}
+
+			/**
+			 * Function to get number of all plugins
+			 * @return sting plugins number
+			 */
+			public function items_count() {
+				global $wpdb, $all_count, $not_in_queue_count, $install_count, $not_isntall_count, $active_count, $inactive_count;
+				$all_count = $not_in_queue_count = $install_count = $not_isntall_count = $active_count = $inactive_count = 0;
+				$plugins_data = $wpdb->get_results( "SELECT * FROM " . $wpdb->base_prefix . "mlq_mail_plugins;", ARRAY_A );
+				foreach ( $plugins_data as $plugin ) {
+					if ( '1' == $plugin['pro_status'] ) {
+						/* if it's free plugin that has Pro version */
+						$plugin_pro = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=2 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
+					} elseif ( '2' == $plugin['pro_status'] ) {
+						/* if it's Pro plugin - look for free version */
+						$plugin_free = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `pro_status`=1 AND `parallel_plugin_link`='" . $plugin['plugin_link'] . "';", ARRAY_A );
+					}
+					if ( '0' == $plugin['pro_status'] || '1' == $plugin['pro_status'] && empty( $plugin_pro ) || '2' == $plugin['pro_status'] && empty( $plugin_free ) || '1' == $plugin['pro_status'] && ! empty( $plugin_pro ) ) {
+						if ( '1' == $plugin['in_queue_status'] ) {
+							$install_count = ( '1' == $plugin['install_status'] ) ? ++$install_count : $install_count;
+							$not_isntall_count = ( '1' != $plugin['install_status'] ) ? ++$not_isntall_count : $not_isntall_count;
+							$active_count = ( '1' == $plugin['active_status'] ) ? ++$active_count : $active_count;
+							$inactive_count = ( '1' == $plugin['install_status'] && '1' != $plugin['active_status'] ) ? ++$inactive_count : $inactive_count;
+							$all_count++;
+						} else {
+							$not_in_queue_count++;
+						}
 					}
 				}
-			}
 
-			if ( isset( $_REQUEST['plugin_status'] ) ) {
-				switch ( $_REQUEST['plugin_status'] ) {
-					case 'not_in_queue':
-						$items_count = $not_in_queue_count;
-						break;
-					case 'install':
-						$items_count = $install_count;
-						break;
-					case 'not_isntall':
-						$items_count = $not_isntall_count;
-						break;
-					case 'active':
-						$items_count = $active_count;
-						break;
-					case 'inactive':
-						$items_count = $inactive_count;
-						break;
-					default:
-						$items_count = $all_count;
-						break;
+				if ( isset( $_REQUEST['plugin_status'] ) ) {
+					switch ( $_REQUEST['plugin_status'] ) {
+						case 'not_in_queue':
+							$items_count = $not_in_queue_count;
+							break;
+						case 'install':
+							$items_count = $install_count;
+							break;
+						case 'not_isntall':
+							$items_count = $not_isntall_count;
+							break;
+						case 'active':
+							$items_count = $active_count;
+							break;
+						case 'inactive':
+							$items_count = $inactive_count;
+							break;
+						default:
+							$items_count = $all_count;
+							break;
+					}
+				} else {
+					$items_count = $all_count;
 				}
-			} else {
-				$items_count = $all_count;
+				return $items_count;
 			}
-			return $items_count;
 		}
 	}
 }
@@ -2473,7 +2494,7 @@ if ( ! function_exists( 'mlq_plugin_list_actions' ) ) {
  */
 if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 	function mlq_admin_settings_content() {
-		global $wp_version, $wpdb, $wpmu, $mlq_options, $mlq_options_default, $title, $mlq_message, $mlq_error, $mlq_plugin_list, $mlq_active_plugin_list;
+		global $wp_version, $wpdb, $mlq_options, $mlq_options_default, $title, $mlq_message, $mlq_error, $mlq_plugin_list, $mlq_active_plugin_list;
 		$message = '';
 		if ( empty( $mlq_options ) ) {
 			$mlq_options = ( 1 == is_multisite() ) ? get_site_option( 'mlq_options' ) : get_option( 'mlq_options' );
@@ -2582,7 +2603,7 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 			<h2><?php _e( 'Email Queue Settings', 'email-queue' ); ?></h2>
 			<h2 class="nav-tab-wrapper">
 				<a class="nav-tab nav-tab-active" href="admin.php?page=mlq_settings"><?php _e( 'Settings', 'email-queue' ); ?></a>
-				<a class="nav-tab" href="http://bestwebsoft.com/plugin/email-queue/#faq" target="_blank"><?php _e( 'FAQ', 'email-queue' ); ?></a>
+				<a class="nav-tab" href="http://bestwebsoft.com/products/email-queue/faq/" target="_blank"><?php _e( 'FAQ', 'email-queue' ); ?></a>
 			</h2>
 			<?php /* update info on plugins before display and get list of active plugins */
 			$mlq_plugin_list->check_plugin_install_and_active();
@@ -2721,575 +2742,577 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 /**
  * create class MLQ_Mail_Queue_List to display mail queue
  */	
-if ( ! class_exists( 'MLQ_Mail_Queue_List' ) ) {
-	class MLQ_Mail_Queue_List extends WP_List_Table {
+if ( file_exists( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' ) ) {
+	if ( ! class_exists( 'MLQ_Mail_Queue_List' ) ) {
+		class MLQ_Mail_Queue_List extends WP_List_Table {
 
-		/**
-		 * Constructor of class 
-		 */
-		function __construct() {
-			global $status, $page;
-			parent::__construct( array(
-				'singular'  => __( 'mail', 'email-queue' ),
-				'plural'    => __( 'mails', 'email-queue' ),
-				'ajax'      => true,
-				)
-			);
-		}
-
-		/**
-		 * Function to prepare data before display 
-		 * @return void
-		 */
-		function prepare_items() {
-			global $wpdb, $mail_status;
-			$mail_status = isset( $_REQUEST['mail_status'] ) ? $_REQUEST['mail_status'] : 'all';
-			if ( ! in_array( $mail_status, array( 'all', 'in_progress', 'done', 'trash' ) ) )
-				$mail_status = 'all';
-			$search 			= ( isset( $_REQUEST['s'] ) ) ? $_REQUEST['s'] : '';
-			$columns 			= $this->get_columns();
-			$hidden 			= array();
-			$sortable 			= $this->get_sortable_columns();
-			$this->found_data	= $this->mail_list();
-			$this->items 		= $this->found_data;
-			$per_page 			= $this->get_items_per_page( 'reports_per_page', 30 );
-			$current_page 		= $this->get_pagenum();
-			$total_items 		= $this->items_count();
-			$this->set_pagination_args( array(
-					'total_items' => $total_items,
-					'per_page'    => $per_page,
-				)
-			);
-		}
-
-		/**
-		* Function to show message if no reports found
-		* @return void
-		*/
-		function no_items() { ?>
-			<p style="color:red;"><?php _e( 'No messages found', 'email-queue' ); ?></p>
-		<?php }
-
-		/**
-		 * Function to add column of checboxes 
-		 * @param int $item->comment_ID 	The custom column's unique ID number.
-		 * @return string 					with html-structure of <input type=['checkbox']>
-		 */
-		function column_cb( $item ) {
-			return sprintf( '<input id="cb_%1s" type="checkbox" name="report_id[]" value="%2s" />', $item['id'], $item['id'] );
-		}
-
-		/**
-		 * Get a list of columns.
-		 * @return array list of columns and titles
-		 */
-		function get_columns() {
-			$columns = array(
-				'cb'		=> '<input type="checkbox" />',
-				'title'		=> __( 'Subject', 'email-queue' ),
-				'plugin'	=> __( 'Plugin', 'email-queue' ),
-				'priority'	=> __( 'Priority', 'email-queue' ),
-				'status'	=> __( 'Status', 'email-queue' ),
-				'date'		=> __( 'Date', 'email-queue' ),
-			);
-			return $columns;
-		}
-
-		/**
-		 * Get a list of sortable columns.
-		 * @return array list of sortable columns
-		 */
-		function get_sortable_columns() {
-			$sortable_columns = array(
-				'title'		=> array( 'title', false ),
-				'plugin'	=> array( 'plugin', false ),
-				'priority'	=> array( 'priority', false ),
-				'status'	=> array( 'status', false ),
-				'date'		=> array( 'date', false )
-			);
-			return $sortable_columns;
-		}
-
-		/**
-		* Function to add filters below and above reports ist
-		* @param array $which An array of report types. Accepts 'Done', ''In progress.
-		* @return void 
-		*/
-		function extra_tablenav( $which ) {
-			global $wpdb;
-			$all_count     = $done_count = $in_progress_count = $trash_count = 0;
-			$filters_count = $wpdb->get_results (
-				"SELECT COUNT(`mail_send_id`) AS `all`,
-					( SELECT COUNT(`mail_send_id`) FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `mail_status`=1 AND `trash_status`=0 ) AS `done`,
-					( SELECT COUNT(`mail_send_id`) FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `mail_status`=0 AND `trash_status`=0 ) AS `in_progress`,
-					( SELECT COUNT(`mail_send_id`) FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `trash_status`=1 ) AS `trash`
-				FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `trash_status`=0"
-			); 
-			foreach( $filters_count as $count ) {
-				$all_count         = empty( $count->all ) ? 0 : $count->all;
-				$done_count        = empty( $count->done ) ? 0 : $count->done;
-				$in_progress_count = empty( $count->in_progress ) ? 0 : $count->in_progress;
-				$trash_count	   = empty( $count->trash ) ? 0 : $count->trash;
-			} ?>
-			<ul class="subsubsub">
-				<li><a class="mlq-filter<?php if ( ! isset( $_REQUEST['mail_status'] ) || 'all'==$_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue"><?php _e( 'All', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $all_count; ?> )</span></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['mail_status'] ) && "in_progress" == $_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue&mail_status=in_progress"><?php _e( 'In progress', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $in_progress_count; ?> )</span></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['mail_status'] ) && "done" == $_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue&mail_status=done"><?php _e( 'Done', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $done_count; ?> )</span></a> | </li>
-				<li><a class="mlq-filter<?php if( isset( $_REQUEST['mail_status'] ) && "trash" == $_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue&mail_status=trash"><?php _e( 'Trash', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $trash_count; ?> )</span></a></li>
-			</ul><!-- .subsubsub --> 
-		<?php  }
-
-		/**
-		 * Function to add action links to drop down menu before and after mail queue list
-		 * @return array of actions
-		 */
-		function get_bulk_actions() {
-			$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '&mail_status=all';
-			$actions = array();
-
-			if ( in_array( $mail_status, array( '&mail_status=all', '&mail_status=in_progress', '&mail_status=done', ) ) ) {
-				$actions['trash_reports']  = __( 'Move to trash', 'email-queue' );
+			/**
+			 * Constructor of class 
+			 */
+			function __construct() {
+				global $status, $page;
+				parent::__construct( array(
+					'singular'  => __( 'mail', 'email-queue' ),
+					'plural'    => __( 'mails', 'email-queue' ),
+					'ajax'      => true,
+					)
+				);
 			}
-			if ( $mail_status == '&mail_status=trash' ) {
-				$actions['untrash_reports'] = __( 'Restore', 'email-queue' );
-				$actions['delete_reports']  = __( 'Delete permanently', 'email-queue' );
-			}
-			return $actions;
-		}
 
-		/**
-		 * Fires when the default column output is displayed for a single row.
-		 * @param string $column_name      The custom column's name.
-		 * @param int    $item->comment_ID The custom column's unique ID number.
-		 * @return void
-		 */
-		function column_default( $item, $column_name ) {
-			switch( $column_name ) {
-				case 'status':
-				case 'date':
-				case 'title':
-				case 'plugin':
-				case 'priority':
-					return $item[ $column_name ];
-				default:
-					return print_r( $item, true ) ;
+			/**
+			 * Function to prepare data before display 
+			 * @return void
+			 */
+			function prepare_items() {
+				global $wpdb, $mail_status;
+				$mail_status = isset( $_REQUEST['mail_status'] ) ? $_REQUEST['mail_status'] : 'all';
+				if ( ! in_array( $mail_status, array( 'all', 'in_progress', 'done', 'trash' ) ) )
+					$mail_status = 'all';
+				$search 			= ( isset( $_REQUEST['s'] ) ) ? $_REQUEST['s'] : '';
+				$columns 			= $this->get_columns();
+				$hidden 			= array();
+				$sortable 			= $this->get_sortable_columns();
+				$this->found_data	= $this->mail_list();
+				$this->items 		= $this->found_data;
+				$per_page 			= $this->get_items_per_page( 'reports_per_page', 30 );
+				$current_page 		= $this->get_pagenum();
+				$total_items 		= $this->items_count();
+				$this->set_pagination_args( array(
+						'total_items' => $total_items,
+						'per_page'    => $per_page,
+					)
+				);
 			}
-		}
 
-		/**
-		 * Function to add action links to subject column depenting on status page
-		 * @param int $item->comment_ID	The custom column's unique ID number.
-		 * @return string 				with action links
-		 */
-		function column_title( $item ) {
-			$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '&mail_status=all';
-			$actions = array();
-			if ( in_array( $mail_status, array( '&mail_status=all', '&mail_status=in_progress', '&mail_status=done', ) ) ) {
-				$actions['show_report']  = '<a class="mlq-show-users-list" href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=show_report&report_id=' . $item['id'] . '&list_paged=0&list_per_page=30' . $mail_status, 'show_mail_' . $item['id'] ) . '">' . __( 'Mail details', 'email-queue' ) . '</a>';
-				$actions['trash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=trash_report&report_id=' . $item['id'] . $mail_status, 'trash_mail_' . $item['id'] ) . '">' . __( 'Move to trash', 'email-queue' ) . '</a>';
-			}
-			if ( $mail_status == '&mail_status=trash' ) {
-				$actions['untrash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=untrash_report&report_id=' . $item['id'] . $mail_status, 'untrash_mail_' . $item['id'] ) . '">' . __( 'Restore', 'email-queue' ) . '</a>';
-				$actions['delete_report']  = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=delete_report&report_id=' . $item['id'] . $mail_status, 'delete_mail_' . $item['id'] ) . '">' . __( 'Delete permanently', 'email-queue' ) . '</a>';
-			}
-			return sprintf( '%1$s %2$s', $item['title'], $this->row_actions( $actions ) );
-		}
+			/**
+			* Function to show message if no reports found
+			* @return void
+			*/
+			function no_items() { ?>
+				<p style="color:red;"><?php _e( 'No messages found', 'email-queue' ); ?></p>
+			<?php }
 
-		/**
-		 * Function to add necessary class and id to table row
-		 * @param array $mail with report data 
-		 * @return void
-		 */
-		function single_row( $mail ) {
-			if( preg_match( '/done-status/', $mail['status'] ) ) {
-				$row_class = 'mlq-done-row';
-			} elseif( preg_match( '/inprogress-status/', $mail['status'] ) ) {
-				$row_class = 'mlq-inprogress-row';
-			} else {
-				$row_class = null;
+			/**
+			 * Function to add column of checboxes 
+			 * @param int $item->comment_ID 	The custom column's unique ID number.
+			 * @return string 					with html-structure of <input type=['checkbox']>
+			 */
+			function column_cb( $item ) {
+				return sprintf( '<input id="cb_%1s" type="checkbox" name="report_id[]" value="%2s" />', $item['id'], $item['id'] );
 			}
-			echo '<tr id="mlq-report-' . $mail['id'] . '" class="' . trim( $row_class ) . '">';
-				$this->single_row_columns( $mail );
-			echo "</tr>\n";
-		}
-		
-		/**
-		 * Function to get mail queue list
-		 * @return array list of mails
-		 */
-		function mail_list() {
-			global $wpdb;
-			$i 					= 0;
-			$done_status 		= '<p class="mlq-done-status" title="' . __( 'All Done', 'email-queue' ) . '">' . __( 'done', 'email-queue' ) . '</p>';
-			$in_progress_status = '<p class="mlq-inprogress-status" title="' . __( 'In progress', 'email-queue' ) . '">' . __( 'In progress', 'email-queue' ) . '</p>';
-			$mails_list 		= array();  
-			$per_page 			= intval( get_user_option( 'reports_per_page' ) );
-			if ( empty( $per_page ) || $per_page < 1 ) {
-				$per_page = 30;
+
+			/**
+			 * Get a list of columns.
+			 * @return array list of columns and titles
+			 */
+			function get_columns() {
+				$columns = array(
+					'cb'		=> '<input type="checkbox" />',
+					'title'		=> __( 'Subject', 'email-queue' ),
+					'plugin'	=> __( 'Plugin', 'email-queue' ),
+					'priority'	=> __( 'Priority', 'email-queue' ),
+					'status'	=> __( 'Status', 'email-queue' ),
+					'date'		=> __( 'Date', 'email-queue' ),
+				);
+				return $columns;
 			}
-			$start_row = ( isset( $_REQUEST['paged'] ) && '1' != $_REQUEST['paged'] ) ? $per_page * ( absint( $_REQUEST['paged'] - 1 ) ) : 0;
-			if ( isset( $_REQUEST['orderby'] ) ) {
-				switch ( $_REQUEST['orderby'] ) {
-					case 'date':
-						$order_by = 'date_create';
-						break;
-					case 'title':
-						$order_by = 'subject';
-						break;
+
+			/**
+			 * Get a list of sortable columns.
+			 * @return array list of sortable columns
+			 */
+			function get_sortable_columns() {
+				$sortable_columns = array(
+					'title'		=> array( 'title', false ),
+					'plugin'	=> array( 'plugin', false ),
+					'priority'	=> array( 'priority', false ),
+					'status'	=> array( 'status', false ),
+					'date'		=> array( 'date', false )
+				);
+				return $sortable_columns;
+			}
+
+			/**
+			* Function to add filters below and above reports ist
+			* @param array $which An array of report types. Accepts 'Done', ''In progress.
+			* @return void 
+			*/
+			function extra_tablenav( $which ) {
+				global $wpdb;
+				$all_count     = $done_count = $in_progress_count = $trash_count = 0;
+				$filters_count = $wpdb->get_results (
+					"SELECT COUNT(`mail_send_id`) AS `all`,
+						( SELECT COUNT(`mail_send_id`) FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `mail_status`=1 AND `trash_status`=0 ) AS `done`,
+						( SELECT COUNT(`mail_send_id`) FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `mail_status`=0 AND `trash_status`=0 ) AS `in_progress`,
+						( SELECT COUNT(`mail_send_id`) FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `trash_status`=1 ) AS `trash`
+					FROM " . $wpdb->base_prefix . "mlq_mail_send WHERE `trash_status`=0"
+				); 
+				foreach( $filters_count as $count ) {
+					$all_count         = empty( $count->all ) ? 0 : $count->all;
+					$done_count        = empty( $count->done ) ? 0 : $count->done;
+					$in_progress_count = empty( $count->in_progress ) ? 0 : $count->in_progress;
+					$trash_count	   = empty( $count->trash ) ? 0 : $count->trash;
+				} ?>
+				<ul class="subsubsub">
+					<li><a class="mlq-filter<?php if ( ! isset( $_REQUEST['mail_status'] ) || 'all'==$_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue"><?php _e( 'All', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $all_count; ?> )</span></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['mail_status'] ) && "in_progress" == $_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue&mail_status=in_progress"><?php _e( 'In progress', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $in_progress_count; ?> )</span></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['mail_status'] ) && "done" == $_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue&mail_status=done"><?php _e( 'Done', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $done_count; ?> )</span></a> | </li>
+					<li><a class="mlq-filter<?php if( isset( $_REQUEST['mail_status'] ) && "trash" == $_REQUEST['mail_status'] ) { echo " current"; } ?>" href="?page=mlq_view_mail_queue&mail_status=trash"><?php _e( 'Trash', 'email-queue' ); ?><span class="mlq-count"> ( <?php echo $trash_count; ?> )</span></a></li>
+				</ul><!-- .subsubsub --> 
+			<?php  }
+
+			/**
+			 * Function to add action links to drop down menu before and after mail queue list
+			 * @return array of actions
+			 */
+			function get_bulk_actions() {
+				$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '&mail_status=all';
+				$actions = array();
+
+				if ( in_array( $mail_status, array( '&mail_status=all', '&mail_status=in_progress', '&mail_status=done', ) ) ) {
+					$actions['trash_reports']  = __( 'Move to trash', 'email-queue' );
+				}
+				if ( $mail_status == '&mail_status=trash' ) {
+					$actions['untrash_reports'] = __( 'Restore', 'email-queue' );
+					$actions['delete_reports']  = __( 'Delete permanently', 'email-queue' );
+				}
+				return $actions;
+			}
+
+			/**
+			 * Fires when the default column output is displayed for a single row.
+			 * @param string $column_name      The custom column's name.
+			 * @param int    $item->comment_ID The custom column's unique ID number.
+			 * @return void
+			 */
+			function column_default( $item, $column_name ) {
+				switch( $column_name ) {
 					case 'status':
-						$order_by = 'mail_status';
-						break;
+					case 'date':
+					case 'title':
 					case 'plugin':
-						$order_by = 'plugin_id';
-						break;
 					case 'priority':
-						$order_by = 'priority';
+						return $item[ $column_name ];
+					default:
+						return print_r( $item, true ) ;
+				}
+			}
+
+			/**
+			 * Function to add action links to subject column depenting on status page
+			 * @param int $item->comment_ID	The custom column's unique ID number.
+			 * @return string 				with action links
+			 */
+			function column_title( $item ) {
+				$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '&mail_status=all';
+				$actions = array();
+				if ( in_array( $mail_status, array( '&mail_status=all', '&mail_status=in_progress', '&mail_status=done', ) ) ) {
+					$actions['show_report']  = '<a class="mlq-show-users-list" href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=show_report&report_id=' . $item['id'] . '&list_paged=0&list_per_page=30' . $mail_status, 'show_mail_' . $item['id'] ) . '">' . __( 'Mail details', 'email-queue' ) . '</a>';
+					$actions['trash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=trash_report&report_id=' . $item['id'] . $mail_status, 'trash_mail_' . $item['id'] ) . '">' . __( 'Move to trash', 'email-queue' ) . '</a>';
+				}
+				if ( $mail_status == '&mail_status=trash' ) {
+					$actions['untrash_report'] = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=untrash_report&report_id=' . $item['id'] . $mail_status, 'untrash_mail_' . $item['id'] ) . '">' . __( 'Restore', 'email-queue' ) . '</a>';
+					$actions['delete_report']  = '<a href="' . wp_nonce_url( '?page=mlq_view_mail_queue&action=delete_report&report_id=' . $item['id'] . $mail_status, 'delete_mail_' . $item['id'] ) . '">' . __( 'Delete permanently', 'email-queue' ) . '</a>';
+				}
+				return sprintf( '%1$s %2$s', $item['title'], $this->row_actions( $actions ) );
+			}
+
+			/**
+			 * Function to add necessary class and id to table row
+			 * @param array $mail with report data 
+			 * @return void
+			 */
+			function single_row( $mail ) {
+				if( preg_match( '/done-status/', $mail['status'] ) ) {
+					$row_class = 'mlq-done-row';
+				} elseif( preg_match( '/inprogress-status/', $mail['status'] ) ) {
+					$row_class = 'mlq-inprogress-row';
+				} else {
+					$row_class = null;
+				}
+				echo '<tr id="mlq-report-' . $mail['id'] . '" class="' . trim( $row_class ) . '">';
+					$this->single_row_columns( $mail );
+				echo "</tr>\n";
+			}
+			
+			/**
+			 * Function to get mail queue list
+			 * @return array list of mails
+			 */
+			function mail_list() {
+				global $wpdb;
+				$i 					= 0;
+				$done_status 		= '<p class="mlq-done-status" title="' . __( 'All Done', 'email-queue' ) . '">' . __( 'done', 'email-queue' ) . '</p>';
+				$in_progress_status = '<p class="mlq-inprogress-status" title="' . __( 'In progress', 'email-queue' ) . '">' . __( 'In progress', 'email-queue' ) . '</p>';
+				$mails_list 		= array();  
+				$per_page 			= intval( get_user_option( 'reports_per_page' ) );
+				if ( empty( $per_page ) || $per_page < 1 ) {
+					$per_page = 30;
+				}
+				$start_row = ( isset( $_REQUEST['paged'] ) && '1' != $_REQUEST['paged'] ) ? $per_page * ( absint( $_REQUEST['paged'] - 1 ) ) : 0;
+				if ( isset( $_REQUEST['orderby'] ) ) {
+					switch ( $_REQUEST['orderby'] ) {
+						case 'date':
+							$order_by = 'date_create';
+							break;
+						case 'title':
+							$order_by = 'subject';
+							break;
+						case 'status':
+							$order_by = 'mail_status';
+							break;
+						case 'plugin':
+							$order_by = 'plugin_id';
+							break;
+						case 'priority':
+							$order_by = 'priority';
+							break;
+						default:
+							$order_by = 'mail_send_id';
+							break;
+					}
+				} else {
+					$order_by = 'mail_send_id';
+				}
+				$order     = isset( $_REQUEST['order'] ) ? $_REQUEST['order'] : 'DESC';
+				$sql_query = "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_send` ";
+				if ( isset( $_REQUEST['s'] ) && "" != $_REQUEST['s'] )  {
+					$sql_query .= "WHERE `subject`LIKE '%" . $_REQUEST['s'] . "%'";
+				} else {
+					if ( isset( $_REQUEST['mail_status'] ) ) {
+						switch ( $_REQUEST['mail_status'] ) {
+							case 'in_progress':
+								$sql_query .= "WHERE `mail_status`=0  AND `trash_status`=0";
+								break;
+							case 'done':
+								$sql_query .= "WHERE `mail_status`=1  AND `trash_status`=0";
+								break;
+							case 'trash':
+								$sql_query .= "WHERE `trash_status`=1";
+								break;
+							default:
+								$sql_query .= "WHERE `trash_status`=0";
+								break;
+						}
+					} else {
+						$sql_query .= "WHERE `trash_status`=0";
+					}
+				}
+				$sql_query   .= " ORDER BY " . $order_by . " " . $order . " LIMIT " . $per_page . " OFFSET " . $start_row . ";";
+				$mails_data = $wpdb->get_results( $sql_query, ARRAY_A );
+				foreach ( $mails_data as $mail ) {
+					$title = empty( $mail['subject'] ) ? '( ' . __( 'No subject', 'email-queue' ) . ' )' : $mail['subject'];
+					$mails_list[$i] 			= array();
+					$mails_list[$i]['id'] 		= $mail['mail_send_id'];
+					$mails_list[$i]['status'] 	= '1' == $mail['mail_status'] ? $done_status : $in_progress_status;
+					$mails_list[$i]['title'] 	= $title . '<input type="hidden" name="report_' . $mail['mail_send_id'] . '" value="' . $mail['mail_send_id'] . '">' . $this->show_report( $mail['mail_send_id'] );
+					$mails_list[$i]['date'] 	= date( 'd M Y H:i', $mail['date_create'] + get_option('gmt_offset') * 3600 );
+					$mails_list[$i]['plugin'] 	= $this->mlq_get_plugin_name( $mail['plugin_id'] );
+					$mails_list[$i]['priority']	= $this->mlq_get_priority_name( $mail['priority'] );
+					$i ++;
+				}
+				return $mails_list;
+			}
+
+			/**
+			 * Function to get plugin name by its ID
+			 * @return string with Plugin name
+			 */
+			function mlq_get_plugin_name( $plugin_id ) {
+				global $wpdb;
+				$plugin_name = $wpdb->get_var( "SELECT `plugin_name` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `mail_plugin_id`=" . $plugin_id . ";" );
+				return $plugin_name;
+			}
+
+			/**
+			 * Function to get priority name by its ID
+			 * @return string with Priority name
+			 */
+			function mlq_get_priority_name( $priority_id ) {
+				switch ( $priority_id ) {
+					case '1':
+						$priority_name = __( 'Low', 'email-queue' );
+						break;
+					case '3':
+						$priority_name = __( 'Normal', 'email-queue' );
+						break;
+					case '5':
+						$priority_name = __( 'High', 'email-queue' );
 						break;
 					default:
-						$order_by = 'mail_send_id';
+						$priority_name = '';
 						break;
 				}
-			} else {
-				$order_by = 'mail_send_id';
+				return $priority_name;
 			}
-			$order     = isset( $_REQUEST['order'] ) ? $_REQUEST['order'] : 'DESC';
-			$sql_query = "SELECT * FROM `" . $wpdb->base_prefix . "mlq_mail_send` ";
-			if ( isset( $_REQUEST['s'] ) && "" != $_REQUEST['s'] )  {
-				$sql_query .= "WHERE `subject`LIKE '%" . $_REQUEST['s'] . "%'";
-			} else {
+
+			/**
+			 * Function to get number of all reports
+			 * @return sting reports number
+			 */
+			public function items_count() {
+				global $wpdb;
+				$sql_query = "SELECT COUNT(`mail_send_id`) FROM `" . $wpdb->base_prefix . "mlq_mail_send`";
 				if ( isset( $_REQUEST['mail_status'] ) ) {
 					switch ( $_REQUEST['mail_status'] ) {
 						case 'in_progress':
-							$sql_query .= "WHERE `mail_status`=0  AND `trash_status`=0";
+							$sql_query .= " WHERE `mail_status`=0 AND `trash_status`=0;";
 							break;
 						case 'done':
-							$sql_query .= "WHERE `mail_status`=1  AND `trash_status`=0";
+							$sql_query .= " WHERE `mail_status`=1 AND `trash_status`=0;";
 							break;
 						case 'trash':
-							$sql_query .= "WHERE `trash_status`=1";
+							$sql_query .= " WHERE `trash_status`=1;";
 							break;
 						default:
-							$sql_query .= "WHERE `trash_status`=0";
+							$sql_query .= " WHERE `trash_status`=0;";
 							break;
 					}
 				} else {
-					$sql_query .= "WHERE `trash_status`=0";
+					$sql_query .= " WHERE `trash_status`=0;";
 				}
+				$items_count  = $wpdb->get_var( $sql_query );
+				return $items_count;
 			}
-			$sql_query   .= " ORDER BY " . $order_by . " " . $order . " LIMIT " . $per_page . " OFFSET " . $start_row . ";";
-			$mails_data = $wpdb->get_results( $sql_query, ARRAY_A );
-			foreach ( $mails_data as $mail ) {
-				$title = empty( $mail['subject'] ) ? '( ' . __( 'No subject', 'email-queue' ) . ' )' : $mail['subject'];
-				$mails_list[$i] 			= array();
-				$mails_list[$i]['id'] 		= $mail['mail_send_id'];
-				$mails_list[$i]['status'] 	= '1' == $mail['mail_status'] ? $done_status : $in_progress_status;
-				$mails_list[$i]['title'] 	= $title . '<input type="hidden" name="report_' . $mail['mail_send_id'] . '" value="' . $mail['mail_send_id'] . '">' . $this->show_report( $mail['mail_send_id'] );
-				$mails_list[$i]['date'] 	= date( 'd M Y H:i', $mail['date_create'] + get_option('gmt_offset') * 3600 );
-				$mails_list[$i]['plugin'] 	= $this->mlq_get_plugin_name( $mail['plugin_id'] );
-				$mails_list[$i]['priority']	= $this->mlq_get_priority_name( $mail['priority'] );
-				$i ++;
-			}
-			return $mails_list;
-		}
 
-		/**
-		 * Function to get plugin name by its ID
-		 * @return string with Plugin name
-		 */
-		function mlq_get_plugin_name( $plugin_id ) {
-			global $wpdb;
-			$plugin_name = $wpdb->get_var( "SELECT `plugin_name` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `mail_plugin_id`=" . $plugin_id . ";" );
-			return $plugin_name;
-		}
-
-		/**
-		 * Function to get priority name by its ID
-		 * @return string with Priority name
-		 */
-		function mlq_get_priority_name( $priority_id ) {
-			switch ( $priority_id ) {
-				case '1':
-					$priority_name = __( 'Low', 'email-queue' );
-					break;
-				case '3':
-					$priority_name = __( 'Normal', 'email-queue' );
-					break;
-				case '5':
-					$priority_name = __( 'High', 'email-queue' );
-					break;
-				default:
-					$priority_name = '';
-					break;
-			}
-			return $priority_name;
-		}
-
-		/**
-		 * Function to get number of all reports
-		 * @return sting reports number
-		 */
-		public function items_count() {
-			global $wpdb;
-			$sql_query = "SELECT COUNT(`mail_send_id`) FROM `" . $wpdb->base_prefix . "mlq_mail_send`";
-			if ( isset( $_REQUEST['mail_status'] ) ) {
-				switch ( $_REQUEST['mail_status'] ) {
-					case 'in_progress':
-						$sql_query .= " WHERE `mail_status`=0 AND `trash_status`=0;";
-						break;
-					case 'done':
-						$sql_query .= " WHERE `mail_status`=1 AND `trash_status`=0;";
-						break;
-					case 'trash':
-						$sql_query .= " WHERE `trash_status`=1;";
-						break;
-					default:
-						$sql_query .= " WHERE `trash_status`=0;";
-						break;
-				}
-			} else {
-				$sql_query .= " WHERE `trash_status`=0;";
-			}
-			$items_count  = $wpdb->get_var( $sql_query );
-			return $items_count;
-		}
-
-		/**
-		 * Function to display status of mail
-		 * @param string $mail_id id of mail 
-		 * @return string 'done'- ,'inprogress' or 'unknown'- statuses
-		 */
-		public function show_status( $mail_id ) {
-			global $wpdb;
-			$total_count = $send_count = $status = null;
-			$count_mail = $wpdb->get_results(
-				"SELECT COUNT(`id_mail`) AS `total`, 
-					( SELECT COUNT(`id_mail`) FROM `" . $wpdb->base_prefix . "mlq_users` WHERE `id_mail`=" . $mail_id . " AND `status`=1 ) AS `send`
-				FROM `" . $wpdb->base_prefix . "mlq_users` WHERE `id_mail`=" . $mail_id
-			);
-			if ( ! empty( $count_mail ) ) {
-				foreach ( $count_mail as $count ) {
-					$total_count = $count->total;
-					$send_count  = $count->send;
-				}
-				if ( $total_count == $send_count ) {
-					$status = '<span class="mlq-done-status" title="' . __( 'All Done', 'email-queue' ) . '">' . __( 'done', 'email-queue' ) . '</span>';
-				} else {
-					$status = '<span class="mlq-inprogress-status" title="' . __( 'In progress', 'email-queue' ) . '">' . $send_count .' / ' . $total_count . '</span>';
-				}
-			} else {
-				$status = '<span class="mlq-unknown-status" title="' . __( 'Unknown status', 'email-queue' ) . '">' . '?' . '</span>';
-			}
-			return $status;
-		}
-
-		/**
-		 * Function to show list of mail receivers
-		 * @param string $mail_id - id of mail 
-		 * @return string         list of mail receivers in table format
-		 */
-		public function show_report( $mail_id ) {
-			$list_table = null;
-			if ( isset( $_REQUEST['action'] ) && 'show_report' == $_REQUEST['action'] && $mail_id == $_REQUEST['report_id'] && check_admin_referer( 'show_mail_' . $_REQUEST['report_id'] ) ) {
+			/**
+			 * Function to display status of mail
+			 * @param string $mail_id id of mail 
+			 * @return string 'done'- ,'inprogress' or 'unknown'- statuses
+			 */
+			public function show_status( $mail_id ) {
 				global $wpdb;
-				$pagination = '';
-				$mail     = $_REQUEST['report_id'];
-				if ( isset( $_POST['set_list_per_page_top'] ) || isset( $_POST['set_list_per_page_bottom'] ) ) { /* query from mail receivers pagination blocks */
-					/* check if user want change number of mail receiver which will br dysplayed on page */
-					if ( $_POST['set_list_per_page_top'] != $_POST['list_per_page'] ) {
-						$per_page = ( empty( $_POST['set_list_per_page_top'] ) || ( ! preg_match( '/^\d+$/', $_POST['set_list_per_page_top'] ) ) ) ? $_REQUEST['list_per_page'] : $_POST['set_list_per_page_top'];
-						$paged    = 0;
-					} elseif( $_POST['set_list_per_page_bottom'] != $_POST['list_per_page'] ) {
-						$per_page = ( empty( $_POST['set_list_per_page_bottom'] ) || ( ! preg_match( '/^\d+$/', $_POST['set_list_per_page_bottom'] ) ) ) ? $_REQUEST['list_per_page'] : $_POST['set_list_per_page_bottom'];
-						$paged    = 0;
-					/* cheeck if user want to change number of page in text field */
-					} elseif( $_POST['list_paged_top'] != $_POST['current_page'] ) {
-						$per_page   = $_REQUEST['list_per_page'];
-						/* if entered value is empty or not only digital */
-						$list_paged = ( empty( $_POST['list_paged_top'] ) || ( ! preg_match( '/^\d+$/', $_POST['list_paged_top'] ) ) ) ? '1' : $_REQUEST['list_paged_top'];
-						/* if entered value bigger than last page number */
-						$list_paged = intval( $_REQUEST['max_page_number'] ) < intval( $list_paged ) ? $_REQUEST['max_page_number'] : $list_paged;
-						$paged      = intval( $list_paged ) - 1;
-					} elseif( $_POST['list_paged_bottom'] != $_POST['current_page'] ) {
-						$per_page   = $_REQUEST['list_per_page'];
-						/* if entered value is empty or not only digital */
-						$list_paged = ( empty( $_POST['list_paged_bottom'] ) || ( ! preg_match( '/^\d+$/', $_POST['list_paged_bottom'] ) ) ) ? '1' : $_REQUEST['list_paged_bottom'];
-						/* if entered value bigger than last page number */
-						$list_paged = intval( $_REQUEST['max_page_number'] ) < intval( $list_paged ) ? $_REQUEST['max_page_number'] : $list_paged;
-						$paged      = intval( $list_paged ) - 1;
-					} else {
-						$per_page   = $_REQUEST['list_per_page'];
-						$paged      = $_POST['current_page'];
-					}
-				} else { /* query from action link on "Subject" row */
-					$per_page = $_REQUEST['list_per_page'];
-					$paged    = intval( $_GET['list_paged'] );
-				}
-				$list_order_by = isset( $_REQUEST['list_order_by'] ) ? $_REQUEST['list_order_by'] : 'user_email';
-				if( isset( $_REQUEST['list_order'] ) ) {
-					$list_order = 'ASC' == $_REQUEST['list_order'] ? 'DESC' : 'ASC';
-					$link_list_order = $_REQUEST['list_order'];
-				} else {
-					$list_order = $link_list_order = 'ASC';
-				}
-				$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '';
-				$start_row   = $per_page * $paged;
-				$users_list  = $wpdb->get_results( 
-					"SELECT `status`, `view`, `try`, `user_email` 
-					FROM `" . $wpdb->base_prefix . "mlq_mail_users` 
-					WHERE `id_mail`=" . $mail . " ORDER BY " . $list_order_by . " " . $list_order . " LIMIT " . $per_page . " OFFSET " . $start_row . ";"
+				$total_count = $send_count = $status = null;
+				$count_mail = $wpdb->get_results(
+					"SELECT COUNT(`id_mail`) AS `total`, 
+						( SELECT COUNT(`id_mail`) FROM `" . $wpdb->base_prefix . "mlq_users` WHERE `id_mail`=" . $mail_id . " AND `status`=1 ) AS `send`
+					FROM `" . $wpdb->base_prefix . "mlq_users` WHERE `id_mail`=" . $mail_id
 				);
-				if ( ! empty( $users_list ) ) { 
-					$list_table =
-						'<table class="mlq-receivers-list">
-							<thead>
-								<tr scope="row">
-									<td colspan="4">' . $this->mail_receivers_pagination( $mail, $per_page, $paged, $list_order_by, $link_list_order, false, 'top' ) . '</td>
-								</tr>
-								<tr>
-									<td class="mlq-username"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=user_email&list_order=' . $list_order . $mail_status . '">' . __( 'Receiver&#39;s email', 'email-queue' ) . '</a></td>
-									<td><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=status&list_order=' . $list_order . $mail_status . '">' . __( 'Status', 'email-queue' ) . '</a></td>
-									<td style="display: none;"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=view&list_order=' . $list_order . $mail_status . '">' . __( 'View', 'email-queue' ) . '</a></td>
-									<td>' . __( 'Try', 'email-queue' ) . '</td>
-								</tr>
-							</thead>
-							<tfoot>
-								<tr>
-									<td class="mlq-username"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=user_email&list_order=' . $list_order . $mail_status . '">' . __( 'Receiver&#39;s email', 'email-queue' ) . '</a></td>
-									<td><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=status&list_order=' . $list_order . $mail_status . '">' . __( 'Status', 'email-queue' ) . '</a></td>
-									<td style="display: none;"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=view&list_order=' . $list_order . $mail_status . '">' . __( 'View', 'email-queue' ) . '</a></td>
-									<td>' . __( 'Try', 'email-queue' ) . '</td>
-								</tr>
-								<tr scope="row">
-									<td colspan="4">' . $this->mail_receivers_pagination( $mail, $per_page, $paged, $list_order_by, $link_list_order, true, 'bottom' ) . '</td>
-								</tr>
-							</tfoot>
-							<tbody>';
-					foreach( $users_list as $list ) {
-						$user_email = $list->user_email;
-						if ( empty( $user_email ) ) {
-							$user_email = '<i>- ' . __( 'Receiver&#39;s email not found', 'email-queue' ) . ' -</i>';
-						}
-						$list_table .= '<tr>
-											<td class="mlq-username">' . $user_email . '</td>
-											<td>';
-						if( '1' == $list->status ) {
-							$list_table .= '<p style="color: #006505;">' . __( 'sent', 'email-queue' ) . '</p>';
-						} else { 
-							$list_table .= '<p style="color: #700;">' . __( 'in queue', 'email-queue' ) . '</p>'; 
-						}
-						$list_table .=		'</td>
-											<td style="display: none;">';
-						if( '1' == $list->view ) {
-							$list_table .= '<p style="color: green;">' . __( 'read', 'email-queue' ) . '</p>';
-						} else { 
-							$list_table .= '<p style="color: #555;">' . __( 'not read', 'email-queue' ) . '</p>'; 
-						}
-						$list_table .=	'</td>
-										<td>' . $list->try . '</td>
-									</tr>';
+				if ( ! empty( $count_mail ) ) {
+					foreach ( $count_mail as $count ) {
+						$total_count = $count->total;
+						$send_count  = $count->send;
 					}
-					$list_table .= 
-							'</tbody>
-						</table>';
+					if ( $total_count == $send_count ) {
+						$status = '<span class="mlq-done-status" title="' . __( 'All Done', 'email-queue' ) . '">' . __( 'done', 'email-queue' ) . '</span>';
+					} else {
+						$status = '<span class="mlq-inprogress-status" title="' . __( 'In progress', 'email-queue' ) . '">' . $send_count .' / ' . $total_count . '</span>';
+					}
 				} else {
-					/* if( empty( $users_list ) ) */
-					$list_table = '<p style="color:red;">' . __( "The list of mail receivers can't be found.", 'email-queue' ) . '</p>';
+					$status = '<span class="mlq-unknown-status" title="' . __( 'Unknown status', 'email-queue' ) . '">' . '?' . '</span>';
 				}
+				return $status;
 			}
-			return $list_table;
-		}
 
-		/** 
-		 * Function to get mail receivers list pagination
-		 * @param string  $mail_id        id of report
-		 * @param string  $per_page       number of mail receivers on each page
-		 * @param string  $paged          desired page number
-		 * @param string  $list_order_by  on what grounds will be sorting
-		 * @param string  $list_order     "ASC" or "DESC
-		 * @param bool    $show_hidden    show/not hidden fields 
-		 * @param string  $place          postfix to fields name
-		 * @return string                 pagination elements
-		 */
-		function mail_receivers_pagination( $mail_id, $per_page, $paged, $list_order_by, $list_order, $show_hidden, $place ) {
-			global $wpdb;
-			$users_count = $wpdb->get_var(
-				"SELECT COUNT( `mail_users_id` ) FROM `" . $wpdb->base_prefix . "mlq_mail_users` WHERE `id_mail`=" . $mail_id . ";"
-			);
-			$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '';
-			/* open block with pagination elements */
-			$pagination_block = 
-				'<div class="mlq-pagination">
-					<p class="mlq-total-users">' . __( 'Total mail receivers: ', 'email-queue' ) . $users_count . '</p>';
-			if ( 'top' == $place) {
-				$pagination_block .= '<input type="hidden" id="mlq-total-users" value="'. $users_count . '"/>';
+			/**
+			 * Function to show list of mail receivers
+			 * @param string $mail_id - id of mail 
+			 * @return string         list of mail receivers in table format
+			 */
+			public function show_report( $mail_id ) {
+				$list_table = null;
+				if ( isset( $_REQUEST['action'] ) && 'show_report' == $_REQUEST['action'] && $mail_id == $_REQUEST['report_id'] && check_admin_referer( 'show_mail_' . $_REQUEST['report_id'] ) ) {
+					global $wpdb;
+					$pagination = '';
+					$mail     = $_REQUEST['report_id'];
+					if ( isset( $_POST['set_list_per_page_top'] ) || isset( $_POST['set_list_per_page_bottom'] ) ) { /* query from mail receivers pagination blocks */
+						/* check if user want change number of mail receiver which will br dysplayed on page */
+						if ( $_POST['set_list_per_page_top'] != $_POST['list_per_page'] ) {
+							$per_page = ( empty( $_POST['set_list_per_page_top'] ) || ( ! preg_match( '/^\d+$/', $_POST['set_list_per_page_top'] ) ) ) ? $_REQUEST['list_per_page'] : $_POST['set_list_per_page_top'];
+							$paged    = 0;
+						} elseif( $_POST['set_list_per_page_bottom'] != $_POST['list_per_page'] ) {
+							$per_page = ( empty( $_POST['set_list_per_page_bottom'] ) || ( ! preg_match( '/^\d+$/', $_POST['set_list_per_page_bottom'] ) ) ) ? $_REQUEST['list_per_page'] : $_POST['set_list_per_page_bottom'];
+							$paged    = 0;
+						/* cheeck if user want to change number of page in text field */
+						} elseif( $_POST['list_paged_top'] != $_POST['current_page'] ) {
+							$per_page   = $_REQUEST['list_per_page'];
+							/* if entered value is empty or not only digital */
+							$list_paged = ( empty( $_POST['list_paged_top'] ) || ( ! preg_match( '/^\d+$/', $_POST['list_paged_top'] ) ) ) ? '1' : $_REQUEST['list_paged_top'];
+							/* if entered value bigger than last page number */
+							$list_paged = intval( $_REQUEST['max_page_number'] ) < intval( $list_paged ) ? $_REQUEST['max_page_number'] : $list_paged;
+							$paged      = intval( $list_paged ) - 1;
+						} elseif( $_POST['list_paged_bottom'] != $_POST['current_page'] ) {
+							$per_page   = $_REQUEST['list_per_page'];
+							/* if entered value is empty or not only digital */
+							$list_paged = ( empty( $_POST['list_paged_bottom'] ) || ( ! preg_match( '/^\d+$/', $_POST['list_paged_bottom'] ) ) ) ? '1' : $_REQUEST['list_paged_bottom'];
+							/* if entered value bigger than last page number */
+							$list_paged = intval( $_REQUEST['max_page_number'] ) < intval( $list_paged ) ? $_REQUEST['max_page_number'] : $list_paged;
+							$paged      = intval( $list_paged ) - 1;
+						} else {
+							$per_page   = $_REQUEST['list_per_page'];
+							$paged      = $_POST['current_page'];
+						}
+					} else { /* query from action link on "Subject" row */
+						$per_page = $_REQUEST['list_per_page'];
+						$paged    = intval( $_GET['list_paged'] );
+					}
+					$list_order_by = isset( $_REQUEST['list_order_by'] ) ? $_REQUEST['list_order_by'] : 'user_email';
+					if( isset( $_REQUEST['list_order'] ) ) {
+						$list_order = 'ASC' == $_REQUEST['list_order'] ? 'DESC' : 'ASC';
+						$link_list_order = $_REQUEST['list_order'];
+					} else {
+						$list_order = $link_list_order = 'ASC';
+					}
+					$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '';
+					$start_row   = $per_page * $paged;
+					$users_list  = $wpdb->get_results( 
+						"SELECT `status`, `view`, `try`, `user_email` 
+						FROM `" . $wpdb->base_prefix . "mlq_mail_users` 
+						WHERE `id_mail`=" . $mail . " ORDER BY " . $list_order_by . " " . $list_order . " LIMIT " . $per_page . " OFFSET " . $start_row . ";"
+					);
+					if ( ! empty( $users_list ) ) { 
+						$list_table =
+							'<table class="mlq-receivers-list">
+								<thead>
+									<tr scope="row">
+										<td colspan="4">' . $this->mail_receivers_pagination( $mail, $per_page, $paged, $list_order_by, $link_list_order, false, 'top' ) . '</td>
+									</tr>
+									<tr>
+										<td class="mlq-username"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=user_email&list_order=' . $list_order . $mail_status . '">' . __( 'Receiver&#39;s email', 'email-queue' ) . '</a></td>
+										<td><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=status&list_order=' . $list_order . $mail_status . '">' . __( 'Status', 'email-queue' ) . '</a></td>
+										<td style="display: none;"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=view&list_order=' . $list_order . $mail_status . '">' . __( 'View', 'email-queue' ) . '</a></td>
+										<td>' . __( 'Try', 'email-queue' ) . '</td>
+									</tr>
+								</thead>
+								<tfoot>
+									<tr>
+										<td class="mlq-username"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=user_email&list_order=' . $list_order . $mail_status . '">' . __( 'Receiver&#39;s email', 'email-queue' ) . '</a></td>
+										<td><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=status&list_order=' . $list_order . $mail_status . '">' . __( 'Status', 'email-queue' ) . '</a></td>
+										<td style="display: none;"><a href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail . '&list_paged=' . $paged . '&list_per_page=' . $per_page . '&list_order_by=view&list_order=' . $list_order . $mail_status . '">' . __( 'View', 'email-queue' ) . '</a></td>
+										<td>' . __( 'Try', 'email-queue' ) . '</td>
+									</tr>
+									<tr scope="row">
+										<td colspan="4">' . $this->mail_receivers_pagination( $mail, $per_page, $paged, $list_order_by, $link_list_order, true, 'bottom' ) . '</td>
+									</tr>
+								</tfoot>
+								<tbody>';
+						foreach( $users_list as $list ) {
+							$user_email = $list->user_email;
+							if ( empty( $user_email ) ) {
+								$user_email = '<i>- ' . __( 'Receiver&#39;s email not found', 'email-queue' ) . ' -</i>';
+							}
+							$list_table .= '<tr>
+												<td class="mlq-username">' . $user_email . '</td>
+												<td>';
+							if( '1' == $list->status ) {
+								$list_table .= '<p style="color: #006505;">' . __( 'sent', 'email-queue' ) . '</p>';
+							} else { 
+								$list_table .= '<p style="color: #700;">' . __( 'in queue', 'email-queue' ) . '</p>'; 
+							}
+							$list_table .=		'</td>
+												<td style="display: none;">';
+							if( '1' == $list->view ) {
+								$list_table .= '<p style="color: green;">' . __( 'read', 'email-queue' ) . '</p>';
+							} else { 
+								$list_table .= '<p style="color: #555;">' . __( 'not read', 'email-queue' ) . '</p>'; 
+							}
+							$list_table .=	'</td>
+											<td>' . $list->try . '</td>
+										</tr>';
+						}
+						$list_table .= 
+								'</tbody>
+							</table>';
+					} else {
+						/* if( empty( $users_list ) ) */
+						$list_table = '<p style="color:red;">' . __( "The list of mail receivers can't be found.", 'email-queue' ) . '</p>';
+					}
+				}
+				return $list_table;
 			}
-			/* if more than 1 page */
-			if ( intval( $users_count ) > $per_page ) {
-				$pagination_block .= 
-					'<div class="mlq-list-per-page">
-						<input type="text" name="set_list_per_page_' . $place . '" value="' . $per_page . '" size="3" title="' . __( 'Number of mail receivers on page', 'email-queue' ) . '"/>
-						<span class="mlq-total-pages">' . __( 'on page', 'email-queue' ) . '</span>
-					</div>';
-				/* get number of all pages */
-				$total_pages 		 = ceil( $users_count / $per_page ) - 1;
-				$total_pages_display = $total_pages + 1;
-				$current_page 		 = $paged + 1;
-				/* get size of <input type="text"/> */
-				if ( '9' < $total_pages && '99' >= $total_pages ) {
-					$input_size = 2;
-				} elseif ( '100' < $total_pages && '999' >= $total_pages ) {
-					$input_size = 3;
-				} elseif ( '1000' < $total_pages && '9999' >= $total_pages ) {
-					$input_size = 4;
-				} elseif ( '10000' < $total_pages && '99999' >= $total_pages ) {
-					$input_size = 5;
-				} else {
-					$input_size = 1;
+
+			/** 
+			 * Function to get mail receivers list pagination
+			 * @param string  $mail_id        id of report
+			 * @param string  $per_page       number of mail receivers on each page
+			 * @param string  $paged          desired page number
+			 * @param string  $list_order_by  on what grounds will be sorting
+			 * @param string  $list_order     "ASC" or "DESC
+			 * @param bool    $show_hidden    show/not hidden fields 
+			 * @param string  $place          postfix to fields name
+			 * @return string                 pagination elements
+			 */
+			function mail_receivers_pagination( $mail_id, $per_page, $paged, $list_order_by, $list_order, $show_hidden, $place ) {
+				global $wpdb;
+				$users_count = $wpdb->get_var(
+					"SELECT COUNT( `mail_users_id` ) FROM `" . $wpdb->base_prefix . "mlq_mail_users` WHERE `id_mail`=" . $mail_id . ";"
+				);
+				$mail_status = isset( $_REQUEST['mail_status'] ) ? '&mail_status=' . $_REQUEST['mail_status'] : '';
+				/* open block with pagination elements */
+				$pagination_block = 
+					'<div class="mlq-pagination">
+						<p class="mlq-total-users">' . __( 'Total mail receivers: ', 'email-queue' ) . $users_count . '</p>';
+				if ( 'top' == $place) {
+					$pagination_block .= '<input type="hidden" id="mlq-total-users" value="'. $users_count . '"/>';
 				}
-				$pagination_block .= 
-					'<div class="mlq-list-paged">';
-				if ( 0 < $paged ) { /* if this is NOT first page of mail receivers list */
-					$previous_page_link = ( 1 < $paged ) ? $paged - 1 : 0;
+				/* if more than 1 page */
+				if ( intval( $users_count ) > $per_page ) {
 					$pagination_block .= 
-						'<a class="first-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=0&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the first page', 'email-queue' ) . '">&laquo;</a>
-						<a class="previous-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=' . $previous_page_link . '&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the previous page', 'email-queue' ) . '">&lsaquo;</a>';
-				} else { /* if this is first page of mail receivers list */
+						'<div class="mlq-list-per-page">
+							<input type="text" name="set_list_per_page_' . $place . '" value="' . $per_page . '" size="3" title="' . __( 'Number of mail receivers on page', 'email-queue' ) . '"/>
+							<span class="mlq-total-pages">' . __( 'on page', 'email-queue' ) . '</span>
+						</div>';
+					/* get number of all pages */
+					$total_pages 		 = ceil( $users_count / $per_page ) - 1;
+					$total_pages_display = $total_pages + 1;
+					$current_page 		 = $paged + 1;
+					/* get size of <input type="text"/> */
+					if ( '9' < $total_pages && '99' >= $total_pages ) {
+						$input_size = 2;
+					} elseif ( '100' < $total_pages && '999' >= $total_pages ) {
+						$input_size = 3;
+					} elseif ( '1000' < $total_pages && '9999' >= $total_pages ) {
+						$input_size = 4;
+					} elseif ( '10000' < $total_pages && '99999' >= $total_pages ) {
+						$input_size = 5;
+					} else {
+						$input_size = 1;
+					}
 					$pagination_block .= 
-						'<span class="mlq-first-page-disabled">&laquo;</span>
-						<span class="mlq-previous-page-disabled">&lsaquo;</span>';
+						'<div class="mlq-list-paged">';
+					if ( 0 < $paged ) { /* if this is NOT first page of mail receivers list */
+						$previous_page_link = ( 1 < $paged ) ? $paged - 1 : 0;
+						$pagination_block .= 
+							'<a class="first-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=0&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the first page', 'email-queue' ) . '">&laquo;</a>
+							<a class="previous-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=' . $previous_page_link . '&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the previous page', 'email-queue' ) . '">&lsaquo;</a>';
+					} else { /* if this is first page of mail receivers list */
+						$pagination_block .= 
+							'<span class="mlq-first-page-disabled">&laquo;</span>
+							<span class="mlq-previous-page-disabled">&lsaquo;</span>';
+					}
+					/* field to choose number of mail receivers on page and current page */
+					$pagination_block .= 
+						'<input type="text" class="mlq-page-number" name="list_paged_' . $place . '" value="' . $current_page . '" size="' . $input_size . '" title="' . __( 'Current page', 'email-queue' ) . '"/>
+						<span class="mlq-total-pages">' . __( 'of', 'email-queue' ) . '&nbsp;' . $total_pages_display . '&nbsp;' . __( 'pages', 'email-queue' ) . '</span>';
+					if ( $show_hidden ) {
+						$pagination_block .= 
+							'<input type="hidden" name="action" value="show_report"/>
+							<input type="hidden" name="report_id" value="' . $mail_id . '"/>
+							<input type="hidden" name="list_per_page" value="' . $per_page . '"/>
+							<input type="hidden" name="current_page" value="' . $current_page . '"/>
+							<input type="hidden" name="list_order_by" value="' . $list_order_by . '"/>
+							<input type="hidden" name="list_order" value="' . $list_order . '"/>
+							<input type="hidden" name="max_page_number" value="' . $total_pages_display . '"/>';
+					}
+					if ( ! empty( $mail_status ) ) {
+						$pagination_block .= '<input type="hidden" name="mail_status" value="' . $_REQUEST['mail_status'] . '"/>';
+					}
+					if ( $paged < $total_pages ) { /* if this is NOT last page */
+						$next_page_link = ( ( $paged - 1 ) < $total_pages ) ? $paged + 1 : $total_pages;
+						$pagination_block .= 
+							'<a class="next-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=' . $next_page_link . '&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the next page', 'email-queue' ) . '">&rsaquo;</a>
+							<a class="last-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=' . $total_pages . '&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the last page', 'email-queue' ) . '">&raquo;</a>';
+					} else { /* if this is last page */
+						$pagination_block .= 
+							'<span class="mlq-next-page-disabled">&rsaquo;</span>
+							<span class="mlq-last-page-disabled">&raquo;</span>';
+					}
+					$pagination_block .= '</div><!-- .list-paged -->';
 				}
-				/* field to choose number of mail receivers on page and current page */
-				$pagination_block .= 
-					'<input type="text" class="mlq-page-number" name="list_paged_' . $place . '" value="' . $current_page . '" size="' . $input_size . '" title="' . __( 'Current page', 'email-queue' ) . '"/>
-					<span class="mlq-total-pages">' . __( 'of', 'email-queue' ) . '&nbsp;' . $total_pages_display . '&nbsp;' . __( 'pages', 'email-queue' ) . '</span>';
-				if ( $show_hidden ) {
-					$pagination_block .= 
-						'<input type="hidden" name="action" value="show_report"/>
-						<input type="hidden" name="report_id" value="' . $mail_id . '"/>
-						<input type="hidden" name="list_per_page" value="' . $per_page . '"/>
-						<input type="hidden" name="current_page" value="' . $current_page . '"/>
-						<input type="hidden" name="list_order_by" value="' . $list_order_by . '"/>
-						<input type="hidden" name="list_order" value="' . $list_order . '"/>
-						<input type="hidden" name="max_page_number" value="' . $total_pages_display . '"/>';
-				}
-				if ( ! empty( $mail_status ) ) {
-					$pagination_block .= '<input type="hidden" name="mail_status" value="' . $_REQUEST['mail_status'] . '"/>';
-				}
-				if ( $paged < $total_pages ) { /* if this is NOT last page */
-					$next_page_link = ( ( $paged - 1 ) < $total_pages ) ? $paged + 1 : $total_pages;
-					$pagination_block .= 
-						'<a class="next-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=' . $next_page_link . '&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the next page', 'email-queue' ) . '">&rsaquo;</a>
-						<a class="last-page" href="?page=mlq_view_mail_queue&action=show_report&report_id=' . $mail_id . '&list_paged=' . $total_pages . '&list_per_page=' . $per_page . $mail_status . '&list_order_by=' . $list_order_by . '&list_order=' . $list_order . '" title="' . __( 'Go to the last page', 'email-queue' ) . '">&raquo;</a>';
-				} else { /* if this is last page */
-					$pagination_block .= 
-						'<span class="mlq-next-page-disabled">&rsaquo;</span>
-						<span class="mlq-last-page-disabled">&raquo;</span>';
-				}
-				$pagination_block .= '</div><!-- .list-paged -->';
+				/* close block with pagination elememnts */
+				$pagination_block .= '</div><!-- .mlq-pagination -->';
+				return $pagination_block;
 			}
-			/* close block with pagination elememnts */
-			$pagination_block .= '</div><!-- .mlq-pagination -->';
-			return $pagination_block;
 		}
 	}
 }
@@ -3584,12 +3607,15 @@ register_activation_hook( plugin_basename( __FILE__ ), 'mlq_send_activate' );
 add_filter( 'plugin_action_links', 'mlq_plugin_action_links', 10, 2 );
 add_filter( 'plugin_row_meta', 'mlq_register_plugin_links', 10, 2 );
 /* add menu on dashboard */
-if ( is_multisite() ) {
-	add_action( 'network_admin_menu', 'mlq_admin_default_setup' );
-} else {
-	add_action( 'admin_menu', 'mlq_admin_default_setup' );
+if ( function_exists( 'is_multisite' ) ) {
+	if ( is_multisite() ) {
+		add_action( 'network_admin_menu', 'mlq_admin_default_setup' );
+	} else {
+		add_action( 'admin_menu', 'mlq_admin_default_setup' );
+	}
 }
 /* admin settings, styles and scripts */
+add_action( 'init', 'mlq_init' );
 add_action( 'admin_init', 'mlq_admin_init' );
 add_action( 'admin_enqueue_scripts', 'mlq_admin_head' );
 /* grab mail data from other plugins */
