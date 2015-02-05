@@ -3,12 +3,12 @@ Plugin Name: Email Queue
 Plugin URI: http://bestwebsoft.com/products/
 Description: This plugin allows you to manage email massages sent by BestWebSoft plugins.
 Author: BestWebSoft
-Version: 1.0.3
+Version: 1.0.4
 Author URI: http://bestwebsoft.com/
 License: GPLv3 or later
 */
 
-/*  © Copyright 2014  BestWebSoft  ( http://support.bestwebsoft.com )
+/*  © Copyright 2015  BestWebSoft  ( http://support.bestwebsoft.com )
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License, version 2, as 
@@ -185,6 +185,52 @@ if ( ! function_exists( 'mlq_register_settings' ) ) {
 
 		/* array merge incase new version of plugin has added new options */
 		if ( ! isset( $mlq_options['plugin_option_version'] ) || $mlq_options['plugin_option_version'] != $mlq_plugin_info["Version"] ) {
+			/* update table 'mlq_mail_plugins' */
+			/* get array with plugins in DB */
+			$plugins_in_db = $wpdb->get_results( "SELECT `plugin_name`, `plugin_slug`, `plugin_link`, `install_link`, `pro_status`, `parallel_plugin_link` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins`", ARRAY_A );
+			foreach ( $plugins_in_db as $key => $value ) {
+				$plugins_in_db[ $value['plugin_link'] ] = $value;
+				unset( $plugins_in_db[ $key ] );
+			}
+			/* get default plugins' values */
+			$default_plugins = mlq_get_default_plugins();
+			/* Check each default plugin against the ones in DB */
+			foreach ( $default_plugins as $def_plugin_key => $def_plugin_value ) {
+				/* to prevent from repeated data-insert after plugin update */
+				if ( ! array_key_exists( $def_plugin_key, $plugins_in_db ) ) {
+					if ( ! isset( $def_plugin_value['pro_status'] ) ) {
+						$def_plugin_value['pro_status'] = 0;
+					}
+					if ( ! isset( $def_plugin_value['parallel_plugin_link'] ) ) {
+						$def_plugin_value['parallel_plugin_link'] = '0';
+					}
+					$wpdb->insert( $wpdb->base_prefix . 'mlq_mail_plugins', array(
+						'plugin_name' 			=> $def_plugin_value['plugin_name'],
+						'plugin_slug' 			=> $def_plugin_value['plugin_slug'],
+						'plugin_link'			=> $def_plugin_key,
+						'install_link'			=> $def_plugin_value['install_link'],
+						'pro_status'			=> $def_plugin_value['pro_status'],
+						'parallel_plugin_link'	=> $def_plugin_value['parallel_plugin_link'],
+						)
+					);
+				} else {
+					/* check if plugin info needs an update */
+					$update_data = array();
+					foreach ( $plugins_in_db[ $def_plugin_key ] as $in_db_plugin_data_key => $in_db_plugin_data_value ) {
+						if ( isset( $def_plugin_value[ $in_db_plugin_data_key ] ) && $def_plugin_value[ $in_db_plugin_data_key ] != $in_db_plugin_data_value ) {
+							$update_data[ $in_db_plugin_data_key ] = $def_plugin_value[ $in_db_plugin_data_key ];
+						}
+					}
+					if ( ! empty( $update_data ) ) {
+						/* update plugin info if changed */
+						$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins',
+							$update_data, 
+							array( 'plugin_link' => $def_plugin_key )
+						);
+					}
+				}
+			}
+
 			$mlq_options = array_merge( $mlq_options_default, $mlq_options );
 			$mlq_options['plugin_option_version'] = $mlq_plugin_info["Version"];
 			if ( is_multisite() ) {
@@ -242,7 +288,7 @@ if ( ! function_exists ( 'mlq_register_plugin_links' ) ) {
  */
 if ( ! function_exists ( 'mlq_get_default_plugins' ) ) {
 	function mlq_get_default_plugins() {
-		/* Default set of data for 4 free and 3 PRO BWS plugins that send mail */
+		/* Default set of data for 4 free and 4 PRO BWS plugins that send mail */
 		$default_plugins = array(
 			'contact-form-plugin/contact_form.php' => array(
 				'plugin_name'			=> 'Contact form',
@@ -267,6 +313,8 @@ if ( ! function_exists ( 'mlq_get_default_plugins' ) ) {
 				'plugin_slug' 			=> 'subscriber',
 				'plugin_link'			=> 'subscriber/subscriber.php',
 				'install_link'			=> '/wp-admin/plugin-install.php?tab=search&s=Subscriber+Bestwebsoft&plugin-search-input=Search+Plugins',
+				'pro_status'			=> 1,
+				'parallel_plugin_link'	=> 'subscriber-pro/subscriber-pro.php',
 				'plugin_function' 		=> 'sbscrbr_check_for_compatibility_with_mlq',
 			),
 			'updater/updater.php' => array(
@@ -297,6 +345,15 @@ if ( ! function_exists ( 'mlq_get_default_plugins' ) ) {
 				'parallel_plugin_link'	=> 'sender/sender.php',
 				'plugin_function' 		=> 'sndrpr_get_update_on_mail_from_email_queue',
 			),
+			'subscriber-pro/subscriber-pro.php' => array(
+				'plugin_name'			=> 'Subscriber Pro', 
+				'plugin_slug' 			=> 'subscriber_pro',
+				'plugin_link'			=> 'subscriber-pro/subscriber-pro.php',
+				'install_link'			=> 'http://bestwebsoft.com/products/subscriber/?k=cf633acbefbdff78545347fe08a3aecb',
+				'pro_status'			=> 2,
+				'parallel_plugin_link'	=> 'subscriber/subscriber.php',
+				'plugin_function' 		=> 'sbscrbrpr_check_for_compatibility_with_mlq',
+			),
 			'updater-pro/updater_pro.php' => array(
 				'plugin_name'			=> 'Updater Pro', 
 				'plugin_slug' 			=> 'updater_pro',
@@ -306,7 +363,7 @@ if ( ! function_exists ( 'mlq_get_default_plugins' ) ) {
 				'parallel_plugin_link'	=> 'updater/updater.php',
 				'plugin_function' 		=> 'pdtrpr_check_for_compatibility_with_mlq',
 			),
-		);		
+		);
 		return $default_plugins;
 	}
 }
@@ -460,11 +517,12 @@ if ( ! function_exists( 'mlq_if_mail_plugin_is_in_queue' ) ) {
  * @param message_subject 	subject of mail
  * @param message_text 		text of mail
  * @param attachments 		attachment of mail
+ * @param headers 			headers of mail
  * @global bool mlq_mail_result true/false on operation of insert in DB
  * @return void
  */
 if ( ! function_exists( 'mlq_get_mail_data_from_contact_form' ) ) {
-	function mlq_get_mail_data_from_contact_form( $plugin_link, $sendto, $message_subject, $message_text, $attachments ) {
+	function mlq_get_mail_data_from_contact_form( $plugin_link, $sendto, $message_subject, $message_text, $attachments, $headers = '' ) {
 		global $wpdb, $mlq_mail_result;
 		/* get plugin id, in_queue_status and priority from DB based on plugin link*/
 		$plugin_info = $wpdb->get_row( "SELECT `mail_plugin_id`, `in_queue_status`, `priority_general` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='" . $plugin_link . "';", ARRAY_A );
@@ -472,12 +530,15 @@ if ( ! function_exists( 'mlq_get_mail_data_from_contact_form' ) ) {
 		if ( 1 == $plugin_info['in_queue_status'] ) {
 			$plugin_id = $plugin_info['mail_plugin_id'];
 			$mail_priority = $plugin_info['priority_general'];
-			/* get contact-form options for headers */
-			$cntctfrm_options = get_option( 'cntctfrm_options' );
-			if ( 1 == $cntctfrm_options['cntctfrm_html_email'] )
-				$headers = 'Content-type: text/html; charset=utf-8' . "\n";
-			else
-				$headers = 'Content-type: text/plain; charset=utf-8' . "\n";
+			if ( empty( $headers ) ) {
+				/* get contact-form options for headers */
+				$cntctfrm_options = get_option( 'cntctfrm_options' );
+				if ( 1 == $cntctfrm_options['cntctfrm_html_email'] )
+					$headers = 'Content-type: text/html; charset=utf-8' . "\n";
+				else
+					$headers = 'Content-type: text/plain; charset=utf-8' . "\n";
+			}
+			
 			/* Save message into database */
 			$mlq_message_save = $wpdb->insert( 
 				$wpdb->base_prefix . 'mlq_mail_send', 
@@ -516,11 +577,13 @@ if ( ! function_exists( 'mlq_get_mail_data_from_contact_form' ) ) {
  * @param message_subject 	subject of mail
  * @param message_text 		text of mail
  * @param attachments 		attachment of mail
+ * @param mlq_user_email 	if not false (email of user)
+ * @param headers 			headers of mail
  * @global bool mlq_mail_result true/false on operation of insert in DB
  * @return void
  */
 if ( ! function_exists( 'mlq_get_mail_data_from_contact_form_pro' ) ) {
-	function mlq_get_mail_data_from_contact_form_pro( $plugin_link, $sendto, $message_subject, $message_text, $attachments, $mlq_user_email ) {
+	function mlq_get_mail_data_from_contact_form_pro( $plugin_link, $sendto, $message_subject, $message_text, $attachments, $mlq_user_email, $headers = '' ) {
 		global $cntctfrmpr_options, $wpdb, $mlq_mail_result;
 		/* get plugin id, in_queue_status and priority from DB based on plugin link*/
 		$plugin_info = $wpdb->get_row( "SELECT `mail_plugin_id`, `in_queue_status`, `priority_general` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='" . $plugin_link . "';", ARRAY_A );
@@ -528,24 +591,20 @@ if ( ! function_exists( 'mlq_get_mail_data_from_contact_form_pro' ) ) {
 		if ( 1 == $plugin_info['in_queue_status'] ) {
 			$plugin_id = $plugin_info['mail_plugin_id'];
 			$mail_priority = $plugin_info['priority_general'];
-			/* set headers based on contact-form-pro options */
-			if ( false === $mlq_user_email ) {
-				$mlq_user_email = $sendto;
-			}
-			if ( 1 == $cntctfrmpr_options['html_email'] ) {
-				$headers = 'Content-type: text/html; charset=utf-8' . "\n";
-			} else {
-				$headers = 'Content-type: text/plain; charset=utf-8' . "\n";
-			}
-			if ( 1 == $cntctfrmpr_options['header_reply_to'] ) {
-				$headers .= 'Reply-To: ' . $mlq_user_email . "\n";
-			}
 
-			/* Additional headers */
-			if ( 'custom' == $cntctfrmpr_options['from_email'] )
-				$headers .= 'From: ' . stripslashes( $cntctfrmpr_options['custom_from_email'] ). '';
-			else
-				$headers .= 'From: ' . $mlq_user_email . '';
+			if ( empty( $headers ) ) {
+				if ( false === $mlq_user_email ) {
+					$mlq_user_email = $sendto;
+				}
+				/* set headers based on contact-form-pro options */
+				$headers = ( 1 == $cntctfrmpr_options['html_email'] ) ? 'Content-type: text/html; charset=utf-8' . "\n" : 'Content-type: text/plain; charset=utf-8' . "\n";
+				/* Add reply-to */
+				if ( 1 == $cntctfrmpr_options['header_reply_to'] ) {
+					$headers .= 'Reply-To: ' . $mlq_user_email . "\n";
+				}
+				/* Additional headers */
+				$headers .= ( 'custom' == $cntctfrmpr_options['from_email'] ) ? 'From: ' . stripslashes( $cntctfrmpr_options['custom_from_email'] ) . '' : 'From: ' . $mlq_user_email . '';
+			}
 
 			/* Save message into database */
 			$mlq_message_save = $wpdb->insert( 
@@ -1325,6 +1384,13 @@ if ( ! function_exists( 'mlq_cron_mail' ) ) {
 			ARRAY_A );
 		/* perform mailout if messages are not sent */
 		if ( ! empty( $users_mail_sends ) ) {
+			/* get the ID of Sender free plugin */
+			$sender_plugin_id = $wpdb->get_var( "SELECT `mail_plugin_id` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='sender/sender.php';" );
+			/* get info (ID & slug) of Sender PRO plugin */
+			$sender_pro_plugin = $wpdb->get_row( "SELECT `mail_plugin_id`, `plugin_link` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='sender-pro/sender-pro.php';", ARRAY_A );
+			/* get the IDs of CF free and PRO versions */
+			$mlq_cntctfrms_ids = $wpdb->get_col( "SELECT `mail_plugin_id` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link` IN ('contact-form-plugin/contact_form.php', 'contact-form-pro/contact_form_pro.php');" );
+			/* loop through the mails */
 			foreach ( $users_mail_sends as $users_mail_send ) {
 				/* get message fields for function sending mail */
 				$current_message_id			= $users_mail_send['id_mail'];
@@ -1333,16 +1399,13 @@ if ( ! function_exists( 'mlq_cron_mail' ) ) {
 				$current_message_body		= $users_mail_send['body'];
 				$current_message_headers	= $users_mail_send['headers'];
 				$current_message_attachment = $users_mail_send['attachment_path'];
-				/* if current plugin is sender - add unsubscribe link for sender */
-				$sender_plugin_id = $wpdb->get_var( "SELECT `mail_plugin_id` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='sender/sender.php';" );
-				if ( $users_mail_send['plugin_id'] == $sender_plugin_id ) {
-					$current_message_body	= apply_filters( 'sbscrbr_add_unsubscribe_link', $current_message_body, array( 'user_email' => $users_mail_send['user_email'], ) );
-				}
 
-				/* if current plugin is Sender Pro */
-				$sender_pro_plugin = $wpdb->get_row( "SELECT `mail_plugin_id`, `plugin_link` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='sender-pro/sender-pro.php';", ARRAY_A );
-				if ( $users_mail_send['plugin_id'] == $sender_pro_plugin['mail_plugin_id'] ) {
-					global $sndrpr_options;
+				/* what plugin the mail has come from */
+				if ( $users_mail_send['plugin_id'] == $sender_plugin_id ) {
+					/* if current plugin is sender - add unsubscribe link for sender */
+					$current_message_body	= apply_filters( 'sbscrbr_add_unsubscribe_link', $current_message_body, array( 'user_email' => $users_mail_send['user_email'], ) );
+				} else if ( $users_mail_send['plugin_id'] == $sender_pro_plugin['mail_plugin_id'] ) {
+					/* if current plugin is Sender Pro */
 					require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 					$plugins_list = get_plugins();
 					if ( array_key_exists( $sender_pro_plugin['plugin_link'], $plugins_list ) ) {
@@ -1362,54 +1425,59 @@ if ( ! function_exists( 'mlq_cron_mail' ) ) {
 						);
 						/* mail data in sender */
 						$letter_data = $wpdb->get_row( "SELECT * FROM `" . $wpdb->base_prefix . "sndr_mail_send` WHERE `mail_send_id`=" . $user_data['id_mail'] . ";", ARRAY_A );
+						global $sndrpr_options;
+						/* get sender-pro options */
+						if ( empty( $sndrpr_options ) ) {
+							$sndrpr_options = ( is_multisite() ) ? get_site_option( 'sndrpr_options' ) : get_option( 'sndrpr_options' );
+						}
+						if ( '1' == $user_data['use_plugin_settings'] ) {
+							$from_name  = $user_data['from_name'];
+							$from_email = $user_data['from_email'];
+						} else {
+							$from_name  = $sndrpr_options['from_custom_name'];
+							if ( empty( $from_name ) )
+								$from_name = get_bloginfo( 'name' );
+
+							if ( empty( $sndrpr_options['from_email'] ) ) {
+								$sitename = strtolower( $_SERVER['SERVER_NAME'] );
+								if ( substr( $sitename, 0, 4 ) == 'www.' ) {
+									$sitename = substr( $sitename, 4 );
+								}
+								$from_email = 'wordpress@' . $sitename;
+							} else
+								$from_email = $sndrpr_options['from_email']; 
+						}
+
 						/* start forming letter content */
 						$content     = sndrpr_replace_shortcodes( $current_user_data, $letter_data );
 						$fonts       = sndrpr_get_fonts( $letter_data['fonts'] );
-						/* get sender-pro options */
-						if ( empty( $sndrpr_options ) ) {
-							$sndrpr_options = get_option( 'sndrpr_options' );
-						}
 						/* get letter data */
 						$body           = '';
-						$subject        = '=?UTF-8?B?' . base64_encode( $subject ) . '?=';
-						$from_name      = '=?UTF-8?B?' . base64_encode( $from_name ) . '?=';
+						/* $subject        = '=?UTF-8?B?' . base64_encode( $subject ) . '?=';
+						$from_name      = '=?UTF-8?B?' . base64_encode( $from_name ) . '?='; */
 						$to             = $user_data['user_email'];
 						$bound_text     = "jimmyP123";
-						$headers        = $current_message_headers . "\n";
-						$secret_picture = 
-							"Content-Type: text/html; charset=utf-8\n" . 
-							"Content-Transfer-Encoding: base64\n\n" . 
-							chunk_split( base64_encode( "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"><html><head><title></title></head><body><img src=\"" . plugins_url( "files/get-view.php", __FILE__ ) . "?get_mes=" . $user_data['mail_users_id'] . "&s=" . md5( 'bws' . $user_data['mail_users_id'] . 'sndrpr_send' ) .  "\"/></body></html>" ) ) . "\n";
-						$result         = array();
-						
+						/* $headers        = $current_message_headers . "\n"; */
+						$headers	= 'MIME-Version: 1.0' . "\n";
+						$headers	.= 'Content-type: text/html; charset=utf-8' . "\n";
+						$headers	.= "From: " .  $from_name . " <" . $from_email . ">\n";
+
 						/* forming content and headers */
 						if ( '1' == $sndrpr_options['html_email'] ) { /* send html version of letter */
-							$headers .= 
-								"Content-Type: multipart/alternative; boundary=\"" . $bound_text . "\";charset=\"utf-8\"\n" .
-								"Content-Transfer-Encoding: 8bit\n";
-							$body =
-								"--" . $bound_text . "\n" . 
-								"Content-type: text/plain; charset=utf-8\n" .
-								"Content-Transfer-Encoding: base64\n\n" .
-								chunk_split( base64_encode( preg_replace( "/\r\n/", "", strip_tags( $content ) ) ) ) . "\n\n" .
-								"--" . $bound_text . "\n";			
-							if ( '1' == $sndrpr_options['confirm'] ) {
-								$body .=
-									"Content-Type: multipart/mixed; boundary=\"" . $bound_text . "-2\"; charset=\"utf-8\"\n\n" .
-									"--" . $bound_text . "-2\n" .
-									sndrpr_get_letter_content( $content, $fonts ) .
-									"--" . $bound_text . "-2\n" .
-									$secret_picture .
-									"--" . $bound_text . "-2--";
+							if ( $mlq_options['mail_method'] != 'smtp' ) {
+								$body = $content;
+								$body .= "<img src=\"" . plugins_url( "files/get-view.php", 'sender-pro/sender-pro.php' ) . "?get_mes=" . $user_data['mail_users_id'] . "&s=" . md5( 'bws' . $user_data['mail_users_id'] . 'sndrpr_send' ) .  "\" width=\"0\" height=\"0\" />";
 							} else {
-								$body .= sndrpr_get_letter_content( $content, $fonts );
+								$smtp_array = sndrpr_get_letter_content_for_smtp( $content, $fonts );
+								$body = $smtp_array['content'];
+								if ( '1' == $sndrpr_options['confirm'] ) {
+									$body .= '<img src="' . plugins_url( "files/get-view.php", 'sender-pro/sender-pro.php' ) . "?get_mes=" . $user_data['mail_users_id'] . "&s=" . md5( 'bws' . $user_data['mail_users_id'] . 'sndrpr_send' ) . '" />';
+								}
+
 							}
-							$body .= "--" . $bound_text . "--";
 						} else { /* send text version of letter */
-							$headers .=
-								"Content-type: text/plain; charset=utf-8\n" .
-								"Content-Transfer-Encoding: base64\n\n";
-							$body = chunk_split( base64_encode( preg_replace( "/\r\n/", "", strip_tags( html_entity_decode( $content ) ) ) ) );
+							$headers .= "Content-type: text/plain; charset=utf-8\n";
+							$body = chunk_split( preg_replace( "/\r\n/", "", strip_tags( html_entity_decode( $content ) ) ) );
 						}
 						/* assign processed values to message text and headers */
 						$current_message_body		= $body;
@@ -1417,11 +1485,8 @@ if ( ! function_exists( 'mlq_cron_mail' ) ) {
 					} else { /* if Sender Pro was deleted before we sent its messages */
 						$current_message_body		= apply_filters( 'sbscrbr_add_unsubscribe_link', $current_message_body, array( 'user_email' => $users_mail_send['user_email'], ) );
 					}
-				}
-
-				/* get filename for attachment in CF or CF Pro */
-				$mlq_cntctfrms_ids = $wpdb->get_col( "SELECT `mail_plugin_id` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link` IN ('contact-form-plugin/contact_form.php', 'contact-form-pro/contact_form_pro.php');" );
-				if ( "" != $current_message_attachment && in_array( $users_mail_send['plugin_id'], $mlq_cntctfrms_ids ) ) {
+				} else if ( "" != $current_message_attachment && in_array( $users_mail_send['plugin_id'], $mlq_cntctfrms_ids ) ) {
+					/* get filename for attachment in CF or CF Pro */
 					$path_parts = pathinfo( $current_message_attachment );
 					if ( $users_mail_send['plugin_id'] == $wpdb->get_var( "SELECT `mail_plugin_id` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_link`='contact-form-plugin/contact_form.php';" ) ) {
 						$path_of_uploaded_file_changed = $path_parts['dirname'] . '/' . preg_replace( '/^cntctfrm_[A-Z,a-z,0-9]{32}_/i', '', $path_parts['basename'] );
@@ -2504,16 +2569,17 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 			/* save priorities values to DB if changed */
 			if ( isset( $_POST['priority']) ) {
 				foreach ( $_POST['priority'] as $plugin_slug => $plugin_priority ) {
-					$current_priority = $wpdb->get_var( "SELECT `priority_general` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_slug`='" . $plugin_slug . "';" );
-					if ( $current_priority != $plugin_priority ) {
-						$wpdb->update( $wpdb->base_prefix . 'mlq_mail_plugins', 
-							array(
-								'priority_general'	=> $plugin_priority,
-							),
-							array(
-								'plugin_slug'		=> $plugin_slug,
-							)
-						);
+					if ( is_numeric( $plugin_priority ) && in_array( $plugin_priority, array( 1, 3, 5 ) ) ) {
+						$current_plugin = $wpdb->get_row( "SELECT `priority_general`, `parallel_plugin_link` FROM `" . $wpdb->base_prefix . "mlq_mail_plugins` WHERE `plugin_slug`='" . stripslashes( esc_html( $plugin_slug ) ). "';", ARRAY_A );
+						if ( ! empty( $current_plugin ) && $current_plugin['priority_general'] != $plugin_priority ) {
+							$query = "UPDATE `" . $wpdb->base_prefix . "mlq_mail_plugins` SET `priority_general` = " . $plugin_priority . " WHERE `plugin_slug`='" . $plugin_slug . "' ";
+							if ( $current_plugin['parallel_plugin_link'] != '0' ) {
+								$query .= "OR `plugin_link`='" . $current_plugin['parallel_plugin_link'] . "'";
+							}
+							$wpdb->query( $query );
+						}
+					} else {
+						$message .= __( 'Something is wrong with priority values. Previous values were restored. Check please.', 'email-queue' ) . '<br />';
 					}
 				}
 			}
@@ -2682,27 +2748,20 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 					</tr>
 					<tr class="mlq_ad_opt mlq_smtp_options">
 						<th><?php _e( 'SMTP Settings', 'email-queue' ); ?></td>
-						<td></td>
-					</tr>
-					<tr class="mlq_ad_opt mlq_smtp_options">
-						<th><?php _e( 'SMTP server', 'email-queue' ); ?></th>
-						<td><input type='text' name='mlq_mail_smtp_host' value='<?php echo $mlq_options['smtp_settings']['host']; ?>' /></td>
-					</tr>
-					<tr class="mlq_ad_opt mlq_smtp_options">
-						<th><?php _e( 'SMTP port', 'email-queue' ); ?></th>
-						<td><input type='text' name='mlq_mail_smtp_port' value='<?php echo $mlq_options['smtp_settings']['port']; ?>' /></td>
-					</tr>
-					<tr class="mlq_ad_opt mlq_smtp_options">
-						<th><?php _e( 'SMTP account', 'email-queue' ); ?></th>
-						<td><input type='text' name='mlq_mail_smtp_accaunt' value='<?php echo $mlq_options['smtp_settings']['accaunt']; ?>' /></td>
-					</tr>
-					<tr class="mlq_ad_opt mlq_smtp_options">
-						<th><?php _e( 'SMTP password', 'email-queue' ); ?></th>
-						<td><input type='password' name='mlq_mail_smtp_password' value='<?php echo $mlq_options['smtp_settings']['password']; ?>' /></td>
-					</tr>
-					<tr class="mlq_ad_opt mlq_smtp_options">
-						<th><?php _e( 'Use SMTP SSL', 'email-queue' ); ?></th>
-						<td><input type='checkbox' name='mlq_ssl' <?php if ( $mlq_options['smtp_settings']['ssl'] ) echo 'checked="checked"'; ?>/></td>
+						<td colspan="2">
+							<input type='text' name='mlq_mail_smtp_host' value='<?php echo $mlq_options['smtp_settings']['host']; ?>' /> 
+							<?php _e( 'SMTP server', 'email-queue' ); ?><br/>
+							<input type='text' name='mlq_mail_smtp_port' value='<?php echo $mlq_options['smtp_settings']['port']; ?>' /> 
+							<?php _e( 'SMTP port', 'email-queue' ); ?><br/>
+							<input type='text' name='mlq_mail_smtp_accaunt' value='<?php echo $mlq_options['smtp_settings']['accaunt']; ?>' /> 
+							<?php _e( 'SMTP account', 'email-queue' ); ?><br/>
+							<input type='password' name='mlq_mail_smtp_password' value='<?php echo $mlq_options['smtp_settings']['password']; ?>' />  
+							<?php _e( 'SMTP password', 'email-queue' ); ?><br/>
+							<label>
+								<input type='checkbox' name='mlq_ssl' <?php if ( $mlq_options['smtp_settings']['ssl'] ) echo 'checked="checked"'; ?>/> 
+								<?php _e( 'Use SMTP SSL', 'email-queue' ); ?>
+							</label>
+						</td>
 					</tr>
 					<tr class="mlq_ad_opt">
 						<th scope="row"><?php _e( "Delete old messages in database", 'email-queue' ); ?></th>
@@ -3241,7 +3300,7 @@ if ( file_exists( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' ) ) {
 				/* open block with pagination elements */
 				$pagination_block = 
 					'<div class="mlq-pagination">
-						<p class="mlq-total-users">' . __( 'Total mail receivers: ', 'email-queue' ) . $users_count . '</p>';
+						<p class="mlq-total-users">' . __( 'Total mail receivers:', 'email-queue' ) . ' ' . $users_count . '</p>';
 				if ( 'top' == $place) {
 					$pagination_block .= '<input type="hidden" id="mlq-total-users" value="'. $users_count . '"/>';
 				}
@@ -3619,11 +3678,12 @@ add_action( 'init', 'mlq_init' );
 add_action( 'admin_init', 'mlq_admin_init' );
 add_action( 'admin_enqueue_scripts', 'mlq_admin_head' );
 /* grab mail data from other plugins */
-add_action( 'cntctfrm_get_mail_data_for_mlq', 'mlq_get_mail_data_from_contact_form', 10, 5 );
-add_action( 'cntctfrmpr_get_mail_data_for_mlq', 'mlq_get_mail_data_from_contact_form_pro', 10, 6 );
+add_action( 'cntctfrm_get_mail_data_for_mlq', 'mlq_get_mail_data_from_contact_form', 10, 6 );
+add_action( 'cntctfrmpr_get_mail_data_for_mlq', 'mlq_get_mail_data_from_contact_form_pro', 10, 7 );
 add_action( 'sndr_get_mail_data', 'mlq_get_mail_data_from_sender', 10, 5 );
 add_action( 'sndrpr_get_data_start_mailout', 'mlq_start_mailout_from_sender_pro', 10, 2 );
 add_action( 'sbscrbr_get_mail_data', 'mlq_get_mail_data_from_subscriber', 10, 5 );
+add_action( 'sbscrbrpr_get_mail_data', 'mlq_get_mail_data_from_subscriber', 10, 5 );
 add_action( 'pdtr_get_mail_data', 'mlq_get_mail_data_from_updater', 10, 5 );
 add_action( 'mlq_get_mail_data_for_email_queue', 'mlq_get_mail_data_for_email_queue_and_save', 10, 6 );
 /* add external plugin info into our plugin's table of mail plugins */
