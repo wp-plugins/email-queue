@@ -1,0 +1,648 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Email Queue\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-04-22 14:12+0300\n"
+"PO-Revision-Date: \n"
+"Last-Translator: BestWebSoft team <wp@bestwebsoft.com>\n"
+"Language-Team: BestWebSoft team <wp@bestwebsoft.com>\n"
+"Language: ru_UA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: _e;__\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=4; plural=(n==1) ? 0 : (n%10==1 && n%100!=11) ? 3 : "
+"((n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20)) ? 1 : 2);\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-SearchPath-0: ..\n"
+
+#: ../email-queue.php:197 ../email-queue.php:215 ../email-queue.php:2609
+msgid "Settings"
+msgstr "Настройки"
+
+#: ../email-queue.php:216 ../email-queue.php:2610
+msgid "FAQ"
+msgstr "Часто задаваемые вопросы"
+
+#: ../email-queue.php:217
+msgid "Support"
+msgstr "Поддержка"
+
+#: ../email-queue.php:422
+msgid "Are you sure that you want to enter such a large value?"
+msgstr "Вы уверены, что необходимо такое большое значение?"
+
+#: ../email-queue.php:1292
+msgid "Your interval"
+msgstr "Установить интервал"
+
+#: ../email-queue.php:1766
+msgid "mail plugin"
+msgstr "почтовый плагин"
+
+#: ../email-queue.php:1767
+msgid "mail plugins"
+msgstr "почтовые плагины"
+
+#: ../email-queue.php:1802
+msgid "No plugins found"
+msgstr "Плагины не найдены"
+
+#: ../email-queue.php:1821
+msgid "Plugin name"
+msgstr "Название плагина"
+
+#: ../email-queue.php:1822
+msgid "Installed"
+msgstr "Установлен"
+
+#: ../email-queue.php:1823
+msgid "Activated"
+msgstr "Активирован"
+
+#: ../email-queue.php:1824
+msgid "General priority for all mails of plugin"
+msgstr "Общий приоритет для всех писем плагина"
+
+#: ../email-queue.php:1851 ../email-queue.php:2844
+msgid "All"
+msgstr "Все"
+
+#: ../email-queue.php:1852
+msgid "Not in queue"
+msgstr "Не в очереди"
+
+#: ../email-queue.php:1853
+msgid "Installed "
+msgstr "Установленные "
+
+#: ../email-queue.php:1854
+msgid "Not installed"
+msgstr "Неустановленные"
+
+#: ../email-queue.php:1855
+msgid "Active"
+msgstr "Активированные"
+
+#: ../email-queue.php:1856
+msgid "Installed but inactive"
+msgstr "Установленные, но не активированные"
+
+#: ../email-queue.php:1868 ../email-queue.php:1902
+msgid "Remove from queue"
+msgstr "Удалить из очереди"
+
+#: ../email-queue.php:1870 ../email-queue.php:1904
+msgid "Restore to queue"
+msgstr "Вернуть в очередь"
+
+#: ../email-queue.php:2181
+msgid "and"
+msgstr "и"
+
+#: ../email-queue.php:2183 ../email-queue.php:2184
+msgid "Yes"
+msgstr "Да"
+
+#: ../email-queue.php:2183 ../email-queue.php:2184
+msgid "No"
+msgstr "Нет"
+
+#: ../email-queue.php:2187
+msgid "Choose a priority"
+msgstr "Выберите приоритет"
+
+#: ../email-queue.php:2189
+msgid "High priority"
+msgstr "Высокий приоритет"
+
+#: ../email-queue.php:2191
+msgid "Normal priority"
+msgstr "Обычный приоритет"
+
+#: ../email-queue.php:2193
+msgid "Low priority"
+msgstr "Низкий приоритет"
+
+#: ../email-queue.php:2196
+msgid "You should"
+msgstr "Вы должны"
+
+#: ../email-queue.php:2196
+msgid "restore"
+msgstr "вернуть"
+
+#: ../email-queue.php:2196
+msgid "plugin back to queue to set a priority"
+msgstr "плагин обратно в очередь, чтобы выставить приоритет"
+
+#: ../email-queue.php:2202 ../email-queue.php:2205 ../email-queue.php:2209
+msgid "You need to"
+msgstr "Вам необходимо"
+
+#: ../email-queue.php:2202
+msgid "You need to install plugin to set a priority"
+msgstr "Вам необходимо установить плагин, чтобы выставить приоритет"
+
+#: ../email-queue.php:2202
+msgid "install"
+msgstr "установить"
+
+#: ../email-queue.php:2202 ../email-queue.php:2209
+msgid "plugin to set a priority"
+msgstr "плагин, чтобы выставить приоритет"
+
+#: ../email-queue.php:2205
+msgid "Install free version"
+msgstr "Установить бесплатную версию"
+
+#: ../email-queue.php:2205
+msgid "install free"
+msgstr "установить бесплатную"
+
+#: ../email-queue.php:2205
+msgid "or"
+msgstr "или"
+
+#: ../email-queue.php:2205
+msgid "Buy Pro version"
+msgstr "Купить Pro-версию"
+
+#: ../email-queue.php:2205
+msgid "buy Pro"
+msgstr "купить Pro"
+
+#: ../email-queue.php:2205
+msgid "version of plugin to set a priority"
+msgstr "версию плагина, чтобы выставить приоритет"
+
+#: ../email-queue.php:2209
+msgid "You need to activate plugin to set a priority"
+msgstr "Вам необходимо активировать плагин, чтобы выставить приоритет"
+
+#: ../email-queue.php:2209
+msgid "activate"
+msgstr "активировать"
+
+#: ../email-queue.php:2286
+msgid "Plugins per page"
+msgstr "Плагинов на странице"
+
+#: ../email-queue.php:2329
+msgid "It seems that you use version of"
+msgstr "Похоже, что Вы используете версию плагина"
+
+#: ../email-queue.php:2330
+msgid "that is uncompatible with Email Queue plugin. Please check for"
+msgstr ""
+"которая несовместима с плагином Email Queue. Пожалуйста, проверьте на наличие"
+
+#: ../email-queue.php:2331
+msgid "Check for updates"
+msgstr "Проверить обновления"
+
+#: ../email-queue.php:2331
+msgid "updates"
+msgstr "обновлений"
+
+#: ../email-queue.php:2358
+msgid "You need to choose some plugins."
+msgstr "Необходимо выбрать хотя бы один плагин."
+
+#: ../email-queue.php:2359
+msgid "Error while removing plugin from the queue."
+msgstr "Ошибка при удалении плагина из очереди."
+
+#: ../email-queue.php:2360
+msgid "Error while restoring plugin to the queue."
+msgstr "Ошибка при возвращении плагина обратно в очередь."
+
+#: ../email-queue.php:2361 ../email-queue.php:3378
+msgid "Please, try it later."
+msgstr "Пожалуйста, попробуйте, позднее."
+
+#: ../email-queue.php:2392 ../email-queue.php:2420
+msgid "Plugin was removed from the queue."
+msgstr "Плагин был исключен из очереди."
+
+#: ../email-queue.php:2392 ../email-queue.php:2420
+msgid "Plugins were removed from the queue."
+msgstr "Плагина (плагинов) были исключены из очереди."
+
+#: ../email-queue.php:2449 ../email-queue.php:2477
+msgid "Plugin was restored to the queue."
+msgstr "Плагин был включен в очередь."
+
+#: ../email-queue.php:2449 ../email-queue.php:2477
+msgid "Plugins were restored to the queue."
+msgstr "Плагина (плагинов) были включены в очередь."
+
+#: ../email-queue.php:2520
+msgid ""
+"Something is wrong with priority values. Previous values were restored. "
+"Check please."
+msgstr ""
+"Произошла ошибка со значениями приоритетов. Предыдущие значения были "
+"восстановлены. Пожалуйста, проверьте."
+
+#: ../email-queue.php:2533
+msgid ""
+"You may have entered too large a value in the \"Interval for sending mail\" "
+"option. Check please."
+msgstr ""
+"Возможно, Вы ввели слишком большое значение в поле \"Интервал между "
+"отправкой сообщений\". Проверьте, пожалуйста."
+
+#: ../email-queue.php:2547
+msgid ""
+"You may have entered too large a value in the \"Number of sent messages at "
+"one time\" option. Check please."
+msgstr ""
+"Возможно, Вы ввели слишком большое значение в поле \"Количество одновременно "
+"отправляемых сообщений\". Проверьте, пожалуйста."
+
+#: ../email-queue.php:2587
+msgid ""
+"You may have entered too large a value in the \"Delete messages that are "
+"older than this number of days\" option. Check please."
+msgstr ""
+"Возможно, Вы ввели слишком большое значение в поле \"Удалять сообщения "
+"старше указанного количества дней\". Проверьте, пожалуйста."
+
+#: ../email-queue.php:2603
+msgid "Settings saved."
+msgstr "Настройки сохранены."
+
+#: ../email-queue.php:2607
+msgid "Email Queue Settings"
+msgstr "Настройки Email Queue"
+
+#: ../email-queue.php:2640
+msgid "Notice:"
+msgstr "Внимание:"
+
+#: ../email-queue.php:2640
+msgid ""
+"The plugin's settings have been changed. In order to save them please don't "
+"forget to click the 'Save changes' button."
+msgstr ""
+"Настройки плагина были изменены.  Для сохранения настроек не забудьте нажать "
+"на кнопку \"Сохранить изменения\"."
+
+#: ../email-queue.php:2643
+msgid "Plugins with email function"
+msgstr "Плагины с функцией отправки электронных сообщений"
+
+#: ../email-queue.php:2652
+msgid "Additional options"
+msgstr "Дополнительные параметры"
+
+#: ../email-queue.php:2657
+msgid "Interval for sending mail"
+msgstr "Интервал между отправкой сообщений"
+
+#: ../email-queue.php:2658
+msgid "(min)"
+msgstr "(мин.)"
+
+#: ../email-queue.php:2661
+msgid "Number of messages sent at one time"
+msgstr "Количество одновременно отправляемых сообщений"
+
+#: ../email-queue.php:2666
+msgid "maximum number of sent mails:"
+msgstr "максимальное количество отправляемых сообщений:"
+
+#: ../email-queue.php:2666
+msgid "per hour"
+msgstr "в час"
+
+#: ../email-queue.php:2666
+msgid ""
+"Please make sure that this number is smaller than max allowed number of sent "
+"mails from your hosting account."
+msgstr ""
+"Пожалуйста, убедитесь, что это значение меньше, чем максимально разрешенное "
+"количество отправляемых сообщений с Вашего хостинг аккаунта."
+
+#: ../email-queue.php:2671
+msgid "What to use?"
+msgstr "Что использовать?"
+
+#: ../email-queue.php:2675
+msgid "Wp-mail"
+msgstr "Wp-mail"
+
+#: ../email-queue.php:2675
+msgid "You can use the wp_mail function for mailing"
+msgstr "Вы можете использовать функцию wordpress wp_mail для рассылки"
+
+#: ../email-queue.php:2679
+msgid "Mail"
+msgstr "Mail"
+
+#: ../email-queue.php:2679
+msgid "To send mail you can use the php mail function"
+msgstr "Для отправки писем Вы можете использовать функцию PHP mail"
+
+#: ../email-queue.php:2683
+msgid "SMTP"
+msgstr "SMTP"
+
+#: ../email-queue.php:2683
+msgid "You can use SMTP for sending mails"
+msgstr "Вы можете использовать SMTP-протокол для отправки писем"
+
+#: ../email-queue.php:2688
+msgid "SMTP Settings"
+msgstr "Настройки SMTP"
+
+#: ../email-queue.php:2691
+msgid "SMTP server"
+msgstr "SMTP-сервер"
+
+#: ../email-queue.php:2693
+msgid "SMTP port"
+msgstr "SMTP-порт"
+
+#: ../email-queue.php:2695
+msgid "SMTP account"
+msgstr "аккаунт SMTP"
+
+#: ../email-queue.php:2697
+msgid "SMTP password"
+msgstr "пароль SMTP"
+
+#: ../email-queue.php:2700
+msgid "Use SMTP SSL"
+msgstr "Использовать протокол SMTP SSL"
+
+#: ../email-queue.php:2705
+msgid "Delete old messages in database"
+msgstr "Удалять старые сообщения в базе данных"
+
+#: ../email-queue.php:2709
+msgid "Delete messages that are older than this number of days"
+msgstr "Удалять сообщения старше указанного количества дней"
+
+#: ../email-queue.php:2714
+msgid "Currnet number of sent messages in database"
+msgstr "Текущее количество отправленных сообщений в базе данных"
+
+#: ../email-queue.php:2721
+msgid "Save changes"
+msgstr "Сохранить изменения"
+
+#: ../email-queue.php:2743
+msgid "mail"
+msgstr "письмо"
+
+#: ../email-queue.php:2744
+msgid "mails"
+msgstr "письма"
+
+#: ../email-queue.php:2779
+msgid "No messages found"
+msgstr "Сообщения не найдены"
+
+#: ../email-queue.php:2798
+msgid "Subject"
+msgstr "Тема"
+
+#: ../email-queue.php:2799
+msgid "Plugin"
+msgstr "Плагин"
+
+#: ../email-queue.php:2800
+msgid "Priority"
+msgstr "Приоритет"
+
+#: ../email-queue.php:2801 ../email-queue.php:3159 ../email-queue.php:3167
+msgid "Status"
+msgstr "Статус"
+
+#: ../email-queue.php:2802
+msgid "Date"
+msgstr "Дата"
+
+#: ../email-queue.php:2845 ../email-queue.php:2933 ../email-queue.php:3086
+msgid "In progress"
+msgstr "В процессе"
+
+#: ../email-queue.php:2846
+msgid "Done"
+msgstr "Выполнено"
+
+#: ../email-queue.php:2847
+msgid "Trash"
+msgstr "Корзина"
+
+#: ../email-queue.php:2860 ../email-queue.php:2898
+msgid "Move to trash"
+msgstr "Переместить в корзину"
+
+#: ../email-queue.php:2863 ../email-queue.php:2901
+msgid "Restore"
+msgstr "Восстановить"
+
+#: ../email-queue.php:2864 ../email-queue.php:2902
+msgid "Delete permanently"
+msgstr "Удалить безвозвратно"
+
+#: ../email-queue.php:2897
+msgid "Mail details"
+msgstr "Информация о письме"
+
+#: ../email-queue.php:2932 ../email-queue.php:3084
+msgid "All Done"
+msgstr "Все выполнено"
+
+#: ../email-queue.php:2932 ../email-queue.php:3084
+msgid "done"
+msgstr "выполнено"
+
+#: ../email-queue.php:2991
+msgid "No subject"
+msgstr "Без темы"
+
+#: ../email-queue.php:3021
+msgid "Low"
+msgstr "Низкий"
+
+#: ../email-queue.php:3024
+msgid "Normal"
+msgstr "Обычный"
+
+#: ../email-queue.php:3027
+msgid "High"
+msgstr "Высокий"
+
+#: ../email-queue.php:3089
+msgid "Unknown status"
+msgstr "Неизвестный статус"
+
+#: ../email-queue.php:3158 ../email-queue.php:3166
+msgid "Receiver&#39;s email"
+msgstr "Адрес получателя"
+
+#: ../email-queue.php:3160 ../email-queue.php:3168
+msgid "View"
+msgstr "Прочитано"
+
+#: ../email-queue.php:3161 ../email-queue.php:3169
+msgid "Try"
+msgstr "Попыток"
+
+#: ../email-queue.php:3179
+msgid "Receiver&#39;s email not found"
+msgstr "Адрес получателя не найден"
+
+#: ../email-queue.php:3185
+msgid "sent"
+msgstr "отправлено"
+
+#: ../email-queue.php:3187
+msgid "in queue"
+msgstr "в очереди"
+
+#: ../email-queue.php:3192
+msgid "read"
+msgstr "прочитано"
+
+#: ../email-queue.php:3194
+msgid "not read"
+msgstr "не прочитано"
+
+#: ../email-queue.php:3205
+msgid "The list of mail receivers can't be found."
+msgstr "Список получателей почты не найден."
+
+#: ../email-queue.php:3231
+msgid "Total mail receivers:"
+msgstr "Получателей почты:"
+
+#: ../email-queue.php:3239
+msgid "Number of mail receivers on page"
+msgstr "Количество получателей почты на странице"
+
+#: ../email-queue.php:3240
+msgid "on page"
+msgstr "на странице"
+
+#: ../email-queue.php:3263
+msgid "Go to the first page"
+msgstr "На первую страницу"
+
+#: ../email-queue.php:3264
+msgid "Go to the previous page"
+msgstr "На предыдущую страницу"
+
+#: ../email-queue.php:3272
+msgid "Current page"
+msgstr "Текущая страница"
+
+#: ../email-queue.php:3273
+msgid "of"
+msgstr "из"
+
+#: ../email-queue.php:3273
+msgid "pages"
+msgstr "страниц"
+
+#: ../email-queue.php:3290
+msgid "Go to the next page"
+msgstr "На следующую страницу"
+
+#: ../email-queue.php:3291
+msgid "Go to the last page"
+msgstr "На последнюю страницу"
+
+#: ../email-queue.php:3317
+msgid "Mails per page"
+msgstr "Писем на странице"
+
+#: ../email-queue.php:3335
+msgid "Email Queue"
+msgstr "Email Queue"
+
+#: ../email-queue.php:3346
+#, php-format
+msgid "Search results for &#8220;%s&#8221;"
+msgstr "Результаты поиска для &#8220;%s&#8221;"
+
+#: ../email-queue.php:3350
+msgid "search"
+msgstr "поиск"
+
+#: ../email-queue.php:3373
+msgid "You need to choose some mails."
+msgstr "Необходимо выбрать хотя бы одно письмо."
+
+#: ../email-queue.php:3374
+msgid "Error while trashing mail."
+msgstr "Ошибка при перемещении письма в корзину."
+
+#: ../email-queue.php:3375
+msgid "Error while untrashing mail."
+msgstr "Ошибка при восстановлении письма из корзины."
+
+#: ../email-queue.php:3376
+msgid "Error while deleting mail receiver."
+msgstr "Ошибка при удалении получателя письма."
+
+#: ../email-queue.php:3377
+msgid "Error while deleting mail."
+msgstr "Ошибка при удалении письма."
+
+#: ../email-queue.php:3402 ../email-queue.php:3424
+msgid "Mail was moved to trash."
+msgstr "Письмо было перемещено в корзину."
+
+#: ../email-queue.php:3402 ../email-queue.php:3424
+msgid "Mails were moved to trash."
+msgstr "Письма (писем) были перемещены в корзину."
+
+#: ../email-queue.php:3446 ../email-queue.php:3470
+msgid "Mail was restored."
+msgstr "Письмо было восстановлено."
+
+#: ../email-queue.php:3446 ../email-queue.php:3470
+msgid "Mails were restored."
+msgstr "Письма (писем) были восстановлены."
+
+#: ../email-queue.php:3502 ../email-queue.php:3536
+msgid "Mail was deleted."
+msgstr "Письмо было удалено."
+
+#: ../email-queue.php:3502 ../email-queue.php:3536
+msgid "Mails were deleted."
+msgstr "Письма (писем) были удалены."
+
+#~ msgid "requires"
+#~ msgstr "необходимо"
+
+#~ msgid ""
+#~ "or higher, that is why it has been deactivated! Please upgrade WordPress "
+#~ "and try again."
+#~ msgstr ""
+#~ "или выше, по-этому плагин нобходимо деактивировать! Пожалуйста, обновите "
+#~ "WordPress и попробуйте снова."
+
+#~ msgid "Back to the WordPress"
+#~ msgstr "Назад к WordPress на"
+
+#~ msgid "Plugins page"
+#~ msgstr "страницу плагинов"
+
+#~ msgid "If you enjoy our plugin, please give it 5 stars on WordPress"
+#~ msgstr ""
+#~ "Если вам понравился наш плагин, пожалуйста, поставьте ему 5 звезд на "
+#~ "WordPress"
+
+#~ msgid "Rate the plugin"
+#~ msgstr "Оценить плагин"
+
+#~ msgid "If there is something wrong about it, please contact us"
+#~ msgstr "Если у вас есть какие-то вопросы, обращайтесь"
