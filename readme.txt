@@ -1,10 +1,10 @@
-=== Email Queue ===
+=== Email Queue by BestWebSoft ===
 Contributors: bestwebsoft
 Donate link: https://www.2checkout.com/checkout/purchase?sid=1430388&quantity=1&product_id=94
 Tags: email, e-mail, mail, mailout, mail queue, mail query, manage mail, priority, priorities, send mail through smtp server, trash, trush, quiry, mayl, maile, qwiry, email queue plugin, queu, qeueu, emeil, imail, assign priorities, priority level, manage messages, trash messages, delete messages, outgoing messages, organize mail queue, remove plugin from queue, send mail through wp-mail server, send mail through php mail server
 Requires at least: 3.1
-Tested up to: 4.1
-Stable tag: 1.0.4
+Tested up to: 4.2-RC3
+Stable tag: 1.0.5
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -109,6 +109,8 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 3. the version of your WordPress installation
 4. copy and paste into the message your system status report. Please read more here: <a href="https://docs.google.com/document/d/1Wi2X8RdRGXk9kMszQy1xItJrpN0ncXgioH935MaBKtc/edit"target="_blank">Instuction on System Status</a>
 
+<a href="https://docs.google.com/document/d/1fzt1YMA0l7j4gmURCuDhp0AGISMYn5iWKOCTXTSsmC8/edit" target="_blank">View a Step-by-step Instruction on Email Queue Installation</a>.
+
 == Screenshots ==
 
 1. Plugin`s settings page with mail plugins list.
@@ -116,6 +118,9 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 3. Mail queue page with the list of addressees. 
 
 == Changelog ==
+
+= V1.0.5 - 22.04.2015 =
+* Bugfix : We fixed bug with displaying the list of the letters.
 
 = V1.0.4 - 05.02.2015 =
 * Update : Compatibility with Subscriber Pro was added.
@@ -138,6 +143,9 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 * Update : The tructure of settings page was changed.
 
 == Upgrade Notice ==
+
+= V1.0.5 =
+We fixed bug with displaying the list of the letters.
 
 = V1.0.4 =
 Compatibility with Subscriber Pro was added. Bug with PRO plugins priorities was fixed. Bug with sending Sender PRO plugin mail was fixed.

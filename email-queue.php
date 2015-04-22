@@ -1,9 +1,9 @@
 <?php /*
-Plugin Name: Email Queue
+Plugin Name: Email Queue by BestWebSoft
 Plugin URI: http://bestwebsoft.com/products/
 Description: This plugin allows you to manage email massages sent by BestWebSoft plugins.
 Author: BestWebSoft
-Version: 1.0.4
+Version: 1.0.5
 Author URI: http://bestwebsoft.com/
 License: GPLv3 or later
 */
@@ -30,60 +30,12 @@ License: GPLv3 or later
 */
 if ( ! function_exists( 'mlq_admin_default_setup' ) ) {
 	function mlq_admin_default_setup() {
-		global $wp_version, $bstwbsftwppdtplgns_options, $bstwbsftwppdtplgns_added_menu;
-		$bws_menu_info = get_plugin_data( plugin_dir_path( __FILE__ ) . "bws_menu/bws_menu.php" );
-		$bws_menu_version = $bws_menu_info["Version"];
-		$base = plugin_basename( __FILE__ );
-
-		if ( ! isset( $bstwbsftwppdtplgns_options ) ) {
-			if ( is_multisite() ) {
-				if ( ! get_site_option( 'bstwbsftwppdtplgns_options' ) )
-					add_site_option( 'bstwbsftwppdtplgns_options', array(), '', 'yes' );
-				$bstwbsftwppdtplgns_options = get_site_option( 'bstwbsftwppdtplgns_options' );
-			} else {
-				if ( ! get_option( 'bstwbsftwppdtplgns_options' ) )
-					add_option( 'bstwbsftwppdtplgns_options', array(), '', 'yes' );
-				$bstwbsftwppdtplgns_options = get_option( 'bstwbsftwppdtplgns_options' );
-			}
-		}
-
-		if ( isset( $bstwbsftwppdtplgns_options['bws_menu_version'] ) ) {
-			$bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] = $bws_menu_version;
-			unset( $bstwbsftwppdtplgns_options['bws_menu_version'] );
-			if ( is_multisite() )
-				update_site_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
-			else
-				update_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
-			require_once( dirname( __FILE__ ) . '/bws_menu/bws_menu.php' );
-		} else if ( ! isset( $bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] ) || $bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] < $bws_menu_version ) {
-			$bstwbsftwppdtplgns_options['bws_menu']['version'][ $base ] = $bws_menu_version;
-			if ( is_multisite() )
-				update_site_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
-			else
-				update_option( 'bstwbsftwppdtplgns_options', $bstwbsftwppdtplgns_options, '', 'yes' );
-			require_once( dirname( __FILE__ ) . '/bws_menu/bws_menu.php' );
-		} else if ( ! isset( $bstwbsftwppdtplgns_added_menu ) ) {
-			$plugin_with_newer_menu = $base;
-			foreach ( $bstwbsftwppdtplgns_options['bws_menu']['version'] as $key => $value ) {
-				if ( $bws_menu_version < $value && is_plugin_active( $base ) ) {
-					$plugin_with_newer_menu = $key;
-				}
-			}
-			$plugin_with_newer_menu = explode( '/', $plugin_with_newer_menu );
-			$wp_content_dir = defined( 'WP_CONTENT_DIR' ) ? basename( WP_CONTENT_DIR ) : 'wp-content';
-			if ( file_exists( ABSPATH . $wp_content_dir . '/plugins/' . $plugin_with_newer_menu[0] . '/bws_menu/bws_menu.php' ) )
-				require_once( ABSPATH . $wp_content_dir . '/plugins/' . $plugin_with_newer_menu[0] . '/bws_menu/bws_menu.php' );
-			else
-				require_once( dirname( __FILE__ ) . '/bws_menu/bws_menu.php' );	
-			$bstwbsftwppdtplgns_added_menu = true;			
-		}
-
+		global $wp_version;
+		bws_add_general_menu( plugin_basename( __FILE__ ) ); 
 		$icon_path    = $wp_version < 3.8 ? plugins_url( "images/plugin_icon_37.png",  __FILE__ ) : plugins_url( "images/plugin_icon_38.png",  __FILE__ );
-		$capabilities = is_multisite() ? 'manage_network_options' : 'manage_options';
-		add_menu_page( 'BWS Plugins', 'BWS Plugins', $capabilities, 'bws_plugins',  'bws_add_menu_render', plugins_url( "images/px.png", __FILE__ ), 1001 );
-		$settings_hook = add_submenu_page( 'bws_plugins', __( 'Email Queue', 'email-queue' ), __( 'Email Queue', 'email-queue' ), $capabilities, 'mlq_settings', 'mlq_admin_settings_content' );
+		$settings_hook = add_submenu_page( 'bws_plugins', 'Email Queue', 'Email Queue', 'manage_options', 'mlq_settings', 'mlq_admin_settings_content' );
 		add_action( "load-$settings_hook", 'mlq_plugin_screen_options' );
-		$hook = add_menu_page( __( 'Email Queue', 'email-queue' ), __( 'Email Queue', 'email-queue' ), $capabilities, 'mlq_view_mail_queue', 'mlq_mail_view', $icon_path, "33.123" );
+		$hook = add_menu_page( 'Email Queue', 'Email Queue', 'manage_options', 'mlq_view_mail_queue', 'mlq_mail_view', $icon_path, "58.1" );
 		add_action( "load-$hook", 'mlq_screen_options' );
 	}
 }
@@ -94,8 +46,17 @@ if ( ! function_exists( 'mlq_admin_default_setup' ) ) {
  */
 if ( ! function_exists ( 'mlq_init' ) ) {
 	function mlq_init() {
-		/* check WordPress version */
-		mlq_version_check();
+		global $mlq_plugin_info;
+
+		require_once( dirname( __FILE__ ) . '/bws_menu/bws_functions.php' );
+		
+		if ( ! $mlq_plugin_info ) {
+			if ( ! function_exists( 'get_plugin_data' ) )
+				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+			$mlq_plugin_info = get_plugin_data( __FILE__ );
+		}
+		/* Function check if plugin is compatible with current WP version  */
+		bws_wp_version_check( plugin_basename( __FILE__ ), $mlq_plugin_info, "3.1" );
 	}
 }
 
@@ -106,11 +67,9 @@ if ( ! function_exists ( 'mlq_init' ) ) {
 if ( ! function_exists ( 'mlq_admin_init' ) ) {
 	function mlq_admin_init() {
 		global $bws_plugin_info, $mlq_plugin_info;
+
 		/* Internationalization, first(!) */
 		load_plugin_textdomain( 'email-queue', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
-
-		if ( ! $mlq_plugin_info )
-			$mlq_plugin_info = get_plugin_data( __FILE__ );
 
 		if ( ! isset( $bws_plugin_info ) || empty( $bws_plugin_info ) )
 			$bws_plugin_info = array( 'id' => '138', 'version' => $mlq_plugin_info["Version"] );
@@ -118,28 +77,6 @@ if ( ! function_exists ( 'mlq_admin_init' ) ) {
 		if ( isset( $_REQUEST['page'] ) && ( 'mlq_view_mail_queue' == $_REQUEST['page'] || 'mlq_settings' == $_REQUEST['page'] ) ) {
 			/* register plugin settings */
 			mlq_register_settings();
-		}
-	}
-}
-
-/**
- * Function check if plugin is compatible with current WP version
- * @return void
- */
-if ( ! function_exists ( 'mlq_version_check' ) ) {
-	function mlq_version_check() {
-		global $wp_version, $mlq_plugin_info;
-		$require_wp		=	"3.1"; /* Wordpress at least requires version */
-		$plugin			=	plugin_basename( __FILE__ );
-		if ( version_compare( $wp_version, $require_wp, "<" ) ) {
-			include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-			if ( is_plugin_active( $plugin ) ) {
-				deactivate_plugins( $plugin );
-				$admin_url = ( function_exists( 'get_admin_url' ) ) ? get_admin_url( null, 'plugins.php' ) : esc_url( '/wp-admin/plugins.php' );
-				if ( ! $mlq_plugin_info )
-					$mlq_plugin_info = get_plugin_data( __FILE__, false );
-				wp_die( "<strong>" . $mlq_plugin_info['Name'] . " </strong> " . __( 'requires', 'email-queue' ) . " <strong>WordPress " . $require_wp . "</strong> " . __( 'or higher, that is why it has been deactivated! Please upgrade WordPress and try again.', 'email-queue') . "<br /><br />" . __( 'Back to the WordPress', 'email-queue') . " <a href='" . $admin_url . "'>" . __( 'Plugins page', 'email-queue') . "</a>." );
-			}
 		}
 	}
 }
@@ -250,14 +187,16 @@ if ( ! function_exists( 'mlq_register_settings' ) ) {
  */
 if ( ! function_exists ( 'mlq_plugin_action_links' ) ) {
 	function mlq_plugin_action_links( $links, $file ) {
-		/* Static so we don't call plugin_basename on every plugin row. */
-		static $this_plugin;
-		if ( ! $this_plugin ) {
-			$this_plugin = plugin_basename( __FILE__ );
-		}
-		if ( $file == $this_plugin ) {
-			$settings_link = '<a href="admin.php?page=mlq_settings">' . __( 'Settings', 'email-queue' ) . '</a>';
-			array_unshift( $links, $settings_link );
+		if ( ( is_multisite() && is_network_admin() ) || ( ! is_multisite() && is_admin() ) ) {
+			/* Static so we don't call plugin_basename on every plugin row. */
+			static $this_plugin;
+			if ( ! $this_plugin ) {
+				$this_plugin = plugin_basename( __FILE__ );
+			}
+			if ( $file == $this_plugin ) {
+				$settings_link = '<a href="admin.php?page=mlq_settings">' . __( 'Settings', 'email-queue' ) . '</a>';
+				array_unshift( $links, $settings_link );
+			}
 		}
 		return $links;
 	}
@@ -273,7 +212,8 @@ if ( ! function_exists ( 'mlq_register_plugin_links' ) ) {
 	function mlq_register_plugin_links( $links, $file ) {
 		$base = plugin_basename( __FILE__ );
 		if ( $file == $base ) {
-			$links[] = '<a href="admin.php?page=mlq_settings">' . __( 'Settings', 'email-queue' ) . '</a>';
+			if ( ( is_multisite() && is_network_admin() ) || ( ! is_multisite() && is_admin() ) )
+				$links[] = '<a href="admin.php?page=mlq_settings">' . __( 'Settings', 'email-queue' ) . '</a>';
 			$links[] = '<a href="http://wordpress.org/plugins/email-queue/faq/" target="_blank">' . __( 'FAQ', 'email-queue' ) . '</a>';
 			$links[] = '<a href="http://support.bestwebsoft.com" target="_blank">' . __( 'Support', 'email-queue' ) . '</a>';
 		}
@@ -1844,8 +1784,7 @@ if ( file_exists( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' ) ) {
 				$columns               	= $this->get_columns();
 				$hidden                	= array();
 				$sortable              	= $this->get_sortable_columns();
-				$this->found_data      	= $this->plugin_list();
-				$this->items           	= $this->found_data;
+				$this->items          	= $this->plugin_list();
 				$per_page              	= $this->get_items_per_page( 'plugins_per_page', 20 );
 				$current_page          	= $this->get_pagenum();
 				$total_items           	= $this->items_count();
@@ -2559,7 +2498,7 @@ if ( ! function_exists( 'mlq_plugin_list_actions' ) ) {
  */
 if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 	function mlq_admin_settings_content() {
-		global $wp_version, $wpdb, $mlq_options, $mlq_options_default, $title, $mlq_message, $mlq_error, $mlq_plugin_list, $mlq_active_plugin_list;
+		global $wp_version, $wpdb, $mlq_options, $mlq_options_default, $title, $mlq_message, $mlq_error, $mlq_plugin_list, $mlq_active_plugin_list, $mlq_plugin_info;
 		$message = '';
 		if ( empty( $mlq_options ) ) {
 			$mlq_options = ( 1 == is_multisite() ) ? get_site_option( 'mlq_options' ) : get_option( 'mlq_options' );
@@ -2784,16 +2723,7 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 				</p>
 				<?php wp_nonce_field( plugin_basename( __FILE__ ), 'mlq_nonce_name' ); ?>				
 			</form>
-			<div class="bws-plugin-reviews">
-				<div class="bws-plugin-reviews-rate">
-					<?php _e( 'If you enjoy our plugin, please give it 5 stars on WordPress', 'email-queue' ); ?>: 
-					<a href="http://wordpress.org/support/view/plugin-reviews/email-queue" target="_blank" title="Email Queue reviews"><?php _e( 'Rate the plugin', 'email-queue' ); ?></a>
-				</div>
-				<div class="bws-plugin-reviews-support">
-					<?php _e( 'If there is something wrong about it, please contact us', 'email-queue' ); ?>: 
-					<a href="http://support.bestwebsoft.com">http://support.bestwebsoft.com</a>
-				</div>
-			</div>
+			<?php bws_plugin_reviews_block( $mlq_plugin_info['Name'], 'email-queue' ); ?>
 		</div><!--  #mlq-mail .wrap .mlq-report-list-page .mlq-mail -->
 	<?php }
 }
@@ -2831,8 +2761,7 @@ if ( file_exists( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' ) ) {
 				$columns 			= $this->get_columns();
 				$hidden 			= array();
 				$sortable 			= $this->get_sortable_columns();
-				$this->found_data	= $this->mail_list();
-				$this->items 		= $this->found_data;
+				$this->items    	= $this->mail_list();
 				$per_page 			= $this->get_items_per_page( 'reports_per_page', 30 );
 				$current_page 		= $this->get_pagenum();
 				$total_items 		= $this->items_count();
