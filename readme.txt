@@ -1,10 +1,10 @@
 === Email Queue by BestWebSoft ===
 Contributors: bestwebsoft
-Donate link: https://www.2checkout.com/checkout/purchase?sid=1430388&quantity=1&product_id=94
+Donate link: http://bestwebsoft.com/donate/
 Tags: email, e-mail, mail, mailout, mail queue, mail query, manage mail, priority, priorities, send mail through smtp server, trash, trush, quiry, mayl, maile, qwiry, email queue plugin, queu, qeueu, emeil, imail, assign priorities, priority level, manage messages, trash messages, delete messages, outgoing messages, organize mail queue, remove plugin from queue, send mail through wp-mail server, send mail through php mail server
 Requires at least: 3.1
-Tested up to: 4.2-RC3
-Stable tag: 1.0.5
+Tested up to: 4.2.2
+Stable tag: 1.0.6
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -79,6 +79,7 @@ For now, this plugin has been tested and works with free and Pro versions of fou
 Please make sure you have set mail-capable plugin's status to 'in queue' on this plugin settings page.
 
 Also, to make this plugin work with other mail-capable plugins you should use the most recent versions of the plugins listed in this question. Please, make sure you use at least the following versions:
+
 - version 3.80 of 'Contact Form' plugin, 
 - version 1.31 of 'Contact Form Pro' plugin,
 - version 0.7 of 'Sender' plugin, 
@@ -104,6 +105,7 @@ To use the plugin on Multisite you should activate it for network. If you use Mu
 = I have some problems with the plugin's work. What Information should I provide to receive proper support? =
 
 Please make sure that the problem hasn't been discussed yet on our forum (<a href="http://support.bestwebsoft.com" target="_blank">http://support.bestwebsoft.com</a>). If no, please provide the following data along with your problem's description:
+
 1. the link to the page where the problem occurs
 2. the name of the plugin and its version. If you are using a pro version - your order number.
 3. the version of your WordPress installation
@@ -118,6 +120,10 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 3. Mail queue page with the list of addressees. 
 
 == Changelog ==
+
+= V1.0.6 - 05.06.2015 =
+* Update : BWS plugins section is updated.
+* Update : We updated all functionality for wordpress 4.2.2.
 
 = V1.0.5 - 22.04.2015 =
 * Bugfix : We fixed bug with displaying the list of the letters.
@@ -143,6 +149,9 @@ Please make sure that the problem hasn't been discussed yet on our forum (<a hre
 * Update : The tructure of settings page was changed.
 
 == Upgrade Notice ==
+
+= V1.0.6 =
+BWS plugins section is updated. We updated all functionality for wordpress 4.2.2.
 
 = V1.0.5 =
 We fixed bug with displaying the list of the letters.

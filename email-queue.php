@@ -1,9 +1,10 @@
-<?php /*
+<?php
+/*
 Plugin Name: Email Queue by BestWebSoft
 Plugin URI: http://bestwebsoft.com/products/
 Description: This plugin allows you to manage email massages sent by BestWebSoft plugins.
 Author: BestWebSoft
-Version: 1.0.5
+Version: 1.0.6
 Author URI: http://bestwebsoft.com/
 License: GPLv3 or later
 */
@@ -111,10 +112,10 @@ if ( ! function_exists( 'mlq_register_settings' ) ) {
 		/* install the default plugin options */
 		if ( 1 == is_multisite() ) {
 			if ( ! get_site_option( 'mlq_options' ) )
-				add_site_option( 'mlq_options', $mlq_options_default, '', 'yes' );
+				add_site_option( 'mlq_options', $mlq_options_default );
 		} else {
 			if ( ! get_option( 'mlq_options' ) )
-				add_option( 'mlq_options', $mlq_options_default, '', 'yes' );
+				add_option( 'mlq_options', $mlq_options_default );
 		}
 
 		/* get plugin options from the database */
@@ -2656,12 +2657,12 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 					</tr>
 					<tr class="mlq_ad_opt">
 						<th scope="row"><?php _e( 'Interval for sending mail', 'email-queue' ); ?></th>
-						<td><input id="mlq_mail_run_time" name='mlq_mail_run_time' type='text' value='<?php echo $mlq_options['mail_run_time']; ?>'> <?php _e( '(min)', 'email-queue' ); ?></td>
+						<td><input id="mlq_mail_run_time" name='mlq_mail_run_time' type='number' max='1000000' value='<?php echo $mlq_options['mail_run_time']; ?>' /> <?php _e( '(min)', 'email-queue' ); ?></td>
 					</tr>
 					<tr class="mlq_ad_opt">
 						<th><?php _e( 'Number of messages sent at one time', 'email-queue' ); ?></th>
 						<td>
-							<input id="mlq_mail_send_count" name='mlq_mail_send_count' type='text' value='<?php echo $mlq_options['mail_send_count']; ?>'><br />
+							<input id="mlq_mail_send_count" name='mlq_mail_send_count' type='number' max='1000000' value='<?php echo $mlq_options['mail_send_count']; ?>'><br />
 							<span class="mlq_info">
 								<?php $number = floor( ( 60 / intval( $mlq_options['mail_run_time'] ) ) * intval( $mlq_options['mail_send_count'] ) );
 								_e( 'maximum number of sent mails:', 'email-queue' );?>&nbsp;<span id="mlq-calculate"><?php echo $number; ?></span>&nbsp;<?php _e( 'per hour', 'email-queue' ); ?>.&nbsp;<br /><span id="mlq_calc_info"><?php _e( 'Please make sure that this number is smaller than max allowed number of sent mails from your hosting account.', 'email-queue' ); ?></span>
@@ -2688,13 +2689,13 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 					<tr class="mlq_ad_opt mlq_smtp_options">
 						<th><?php _e( 'SMTP Settings', 'email-queue' ); ?></td>
 						<td colspan="2">
-							<input type='text' name='mlq_mail_smtp_host' value='<?php echo $mlq_options['smtp_settings']['host']; ?>' /> 
+							<input type='text' maxlength='250' name='mlq_mail_smtp_host' value='<?php echo $mlq_options['smtp_settings']['host']; ?>' /> 
 							<?php _e( 'SMTP server', 'email-queue' ); ?><br/>
-							<input type='text' name='mlq_mail_smtp_port' value='<?php echo $mlq_options['smtp_settings']['port']; ?>' /> 
+							<input type='text' maxlength='100' name='mlq_mail_smtp_port' value='<?php echo $mlq_options['smtp_settings']['port']; ?>' /> 
 							<?php _e( 'SMTP port', 'email-queue' ); ?><br/>
-							<input type='text' name='mlq_mail_smtp_accaunt' value='<?php echo $mlq_options['smtp_settings']['accaunt']; ?>' /> 
+							<input type='text' maxlength='250' name='mlq_mail_smtp_accaunt' value='<?php echo $mlq_options['smtp_settings']['accaunt']; ?>' /> 
 							<?php _e( 'SMTP account', 'email-queue' ); ?><br/>
-							<input type='password' name='mlq_mail_smtp_password' value='<?php echo $mlq_options['smtp_settings']['password']; ?>' />  
+							<input type='password' maxlength='250' name='mlq_mail_smtp_password' value='<?php echo $mlq_options['smtp_settings']['password']; ?>' />  
 							<?php _e( 'SMTP password', 'email-queue' ); ?><br/>
 							<label>
 								<input type='checkbox' name='mlq_ssl' <?php if ( $mlq_options['smtp_settings']['ssl'] ) echo 'checked="checked"'; ?>/> 
@@ -2708,7 +2709,7 @@ if ( ! function_exists( 'mlq_admin_settings_content' ) ) {
 							<input id='mlq_delete_old_mail' name='mlq_delete_old_mail' type="checkbox" value="1" <?php if ( $mlq_options['delete_old_mail'] ) echo "checked=\"checked\" "; ?>/><br />
 							<label  class="mlq_ad_opt mlq_delete_old_mail_option">
 								<span class="mlq_info"><?php _e( 'Delete messages that are older than this number of days', 'email-queue' ); ?></span><br />
-								<input id="mlq_delete_old_mail_days" name='mlq_delete_old_mail_days' type='text' value='<?php echo $mlq_options['delete_old_mail_days']; ?>'><br />
+								<input id="mlq_delete_old_mail_days" name='mlq_delete_old_mail_days' min='1' max='4000' type='number' value='<?php echo $mlq_options['delete_old_mail_days']; ?>'><br />
 							</label>
 							<span class="mlq_info">
 								<?php $mlq_messages_in_db = $wpdb->get_var("SELECT COUNT( `mail_send_id` ) FROM `" . $wpdb->base_prefix . "mlq_mail_send` WHERE `mail_status`='1';");
